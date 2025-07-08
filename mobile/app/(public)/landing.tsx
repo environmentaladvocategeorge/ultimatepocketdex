@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { View, Dimensions, Text } from "react-native";
 import { Button } from "@/components";
 import { Redirect, router } from "expo-router";
@@ -8,47 +8,11 @@ import { colors } from "@/constants/theme";
 const { height } = Dimensions.get("window");
 
 export default function LandingScreen() {
-  const fullText = "Start chatting now.";
-  const [displayText, setDisplayText] = useState("");
   const { isAuthenticated } = useAuthentication();
-
-  useEffect(() => {
-    setDisplayText("");
-
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayText((prev) => {
-        if (i < fullText.length) {
-          const updatedText = prev + fullText[i];
-          i++;
-          return updatedText;
-        } else {
-          clearInterval(interval);
-          return fullText;
-        }
-      });
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, []);
 
   if (isAuthenticated) {
     return <Redirect href="/explore" />;
   }
-
-  const renderText = () => {
-    const parts = displayText.split(" ");
-    return parts.map((part, index) => {
-      if (part === "now.") {
-        return (
-          <Text key={index} style={{ color: "#2c579e" }}>
-            {part}
-          </Text>
-        );
-      }
-      return <Text key={index}>{part} </Text>;
-    });
-  };
 
   return (
     <View
@@ -63,20 +27,7 @@ export default function LandingScreen() {
           justifyContent: "center",
           alignItems: "center",
         }}
-      >
-        <View>
-          <Text
-            style={{
-              fontFamily: "InterTight_500Medium",
-              fontSize: 48,
-              color: colors.white,
-              textAlign: "center",
-            }}
-          >
-            {renderText()}
-          </Text>
-        </View>
-      </View>
+      />
       <View
         style={{
           padding: 20,
@@ -104,7 +55,7 @@ export default function LandingScreen() {
           onPress={() => {}}
           type="outlined"
         />
-        {/* <Button
+        <Button
           title="Login"
           onPress={() => router.push("/login")}
           type="filled"
@@ -113,7 +64,7 @@ export default function LandingScreen() {
           title="Sign Up"
           onPress={() => router.push("/signup")}
           type="outlined"
-        /> */}
+        />
       </View>
     </View>
   );

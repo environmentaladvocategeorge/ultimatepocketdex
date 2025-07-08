@@ -29,6 +29,24 @@ const AuthLayout = () => {
           headerShown: false,
         }}
       ></Stack.Screen>
+      <Stack.Screen
+        name="login"
+        options={{
+          headerTitle: "LOGIN",
+        }}
+      ></Stack.Screen>
+      <Stack.Screen
+        name="signup"
+        options={{
+          headerTitle: "SIGN UP",
+        }}
+      ></Stack.Screen>
+      <Stack.Screen
+        name="confirmation"
+        options={{
+          headerTitle: "CONFIRMATION",
+        }}
+      ></Stack.Screen>
     </Stack>
   );
 };
