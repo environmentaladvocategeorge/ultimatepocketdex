@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useAuthentication } from "@/context/AuthenticationContext";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Octicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 
 export default function ProtectedLayout() {
@@ -44,6 +44,23 @@ export default function ProtectedLayout() {
               size={24}
               color={color}
               style={{ height: 24, width: 24 }}
+            />
+          ),
+        }}
+        redirect={!isAuthenticated}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          headerTitle: "",
+          headerShown: false,
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color, focused }) => (
+            <Octicons
+              name={focused ? "person-fill" : "person"}
+              size={24}
+              color={color}
+              style={{ height: 20, width: 24 }}
             />
           ),
         }}
