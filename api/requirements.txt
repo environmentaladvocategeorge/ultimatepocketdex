@@ -1,0 +1,10 @@
+mangum
+requests
+fastapi
+python-jose
+openai
+uvicorn
+pydantic
+jwt
+psycopg2-binary
+sqlalchemy

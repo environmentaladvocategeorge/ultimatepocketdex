@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for the entire application
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+    Description: "Deployment environment. Allowed values are 'dev' or 'prod'."
+  ResourceBaseIdentifier:
+    Type: String
+    Description: "Base identifier for resource naming."
+  DeploymentRoleARN:
+    Type: String
+    Description: "ARN of the IAM role for deployment."
+
+Resources:
+  # API Nested Stack
+  API:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: api.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
+        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
+
+  # Cognito Nested Stack
+  Cognito:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: cognito.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+
+  # Database Nested Stack
+  DB:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: db.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier

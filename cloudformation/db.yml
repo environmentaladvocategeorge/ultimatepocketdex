@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template with DynamoDB Table for Personal Finance App
+
+Parameters:
+  Environment:
+    Type: String
+    Description: "Deployment environment."
+  ResourceBaseIdentifier:
+    Type: String
+    Description: "Base identifier for resource naming."
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+
+  PublicSubnetX:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.1.0/24"
+      AvailabilityZone: "us-east-1a"
+      MapPublicIpOnLaunch: "true"
+
+  PublicSubnetY:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.2.0/24"
+      AvailabilityZone: "us-east-1b"
+      MapPublicIpOnLaunch: "true"
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+
+  PublicSubnetXRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetX
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetYRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetY
+      RouteTableId: !Ref PublicRouteTable
+
+  RDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for this RDS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "Subnet group for RDS"
+      SubnetIds:
+        - !Ref PublicSubnetX
+        - !Ref PublicSubnetY
+
+  RDS:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      PubliclyAccessible: true
+      DBInstanceIdentifier: !Sub "${ResourceBaseIdentifier}-${Environment}-rds"
+      DBInstanceClass: db.t4g.micro
+      Engine: postgres
+      MasterUsername: "jorgelovesdata"
+      MasterUserPassword: "Apple123Watch"
+      VPCSecurityGroups:
+        - !Ref RDSSG
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 7
+      StorageEncrypted: true
+
+Outputs:
+  VPC:
+    Value: !Ref VPC
+    Description: "The VPC ID that was created."
+  PublicSubnetX:
+    Value: !Ref PublicSubnetX
+    Description: "The ID of the first public subnet."
+  PublicSubnetY:
+    Value: !Ref PublicSubnetY
+    Description: "The ID of the second public subnet."
+  RDSSG:
+    Value: !Ref RDSSG
+    Description: "The RDS security group."
+  RDSSubnetGroup:
+    Value: !Ref RDSSubnetGroup
+    Description: "The RDS subnet group."
+  RDS:
+    Value: !Ref RDS
+    Description: "The RDS instance."
+  RDSEndpoint:
+    Value: !GetAtt RDS.Endpoint.Address
+    Description: "The endpoint address of the RDS instance."
+  RDSPort:
+    Value: !GetAtt RDS.Endpoint.Port
+    Description: "The port of the RDS instance."

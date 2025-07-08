@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for creating Cognito User Pool with both V1 and V2 configurations
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+    Description: "Deployment environment. Allowed values are 'dev' or 'prod'."
+  ResourceBaseIdentifier:
+    Type: String
+    Description: "Base identifier for resource naming."
+
+Resources:
+  CognitoUserPoolV3:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${ResourceBaseIdentifier}-userpool-v3-${Environment}"
+      AliasAttributes:
+        - email
+        - preferred_username
+      AutoVerifiedAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      Schema:
+        - Name: ageRange
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      MfaConfiguration: "OFF"
+
+  CognitoUserPoolClientV3:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${ResourceBaseIdentifier}-client-v3-${Environment}"
+      UserPoolId: !Ref CognitoUserPoolV3
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+Outputs:
+  CognitoUserPoolId:
+    Value: !Ref CognitoUserPoolV3
+    Description: "Cognito User Pool ID (using 32)"
+    Export:
+      Name: !Sub "${AWS::StackName}-CognitoUserPoolId"
+
+  CognitoUserPoolClientId:
+    Value: !Ref CognitoUserPoolClientV3
+    Description: "Cognito User Pool Client ID (using V3)"
+    Export:
+      Name: !Sub "${AWS::StackName}-CognitoUserPoolClientId"
