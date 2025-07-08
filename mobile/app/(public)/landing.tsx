@@ -104,7 +104,7 @@ export default function LandingScreen() {
           onPress={() => {}}
           type="outlined"
         />
-        <Button
+        {/* <Button
           title="Login"
           onPress={() => router.push("/login")}
           type="filled"
@@ -113,7 +113,7 @@ export default function LandingScreen() {
           title="Sign Up"
           onPress={() => router.push("/signup")}
           type="outlined"
-        />
+        /> */}
       </View>
     </View>
   );

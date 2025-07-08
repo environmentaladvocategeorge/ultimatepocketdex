@@ -1,7 +1,7 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   AuthenticationProvider,
   useAuthentication,
@@ -35,8 +35,15 @@ const InitialLayout = () => {
     InterTight_900Black,
   });
 
+  const { isAuthenticated } = useAuthentication();
+  const segments = useSegments();
+  const router = useRouter();
+
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
+      setIsNavigationReady(true);
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
@@ -45,15 +52,9 @@ const InitialLayout = () => {
     onLayoutRootView();
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
-    <Slot />;
-  }
-
-  const { isAuthenticated } = useAuthentication();
-  const segments = useSegments();
-  const router = useRouter();
-
   useEffect(() => {
+    if (!isNavigationReady) return;
+
     const inTabsGroup =
       segments[0] === "(protected)" && segments[1] === "(tabs)";
 
@@ -62,7 +63,11 @@ const InitialLayout = () => {
     } else if (!isAuthenticated) {
       router.replace("/landing");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isNavigationReady]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return <Slot />;
 };
