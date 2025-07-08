@@ -26,3 +26,5 @@ def create_user_controller():
         except Exception as e:
             logger.error(f"Error retrieving user profile: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+        
+    return router
