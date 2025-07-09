@@ -104,6 +104,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   listItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: 8,
     marginVertical: 4,
@@ -115,6 +118,12 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontSize: 16,
     fontWeight: "600",
+    flexShrink: 1,
+  },
+  listItemLogo: {
+    height: 20,
+    aspectRatio: 1.5,
+    resizeMode: "contain",
   },
 });
 
@@ -128,7 +137,7 @@ export default function ExploreScreen() {
   const [isFocused, setIsFocused] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [cardSets, setCardSets] = useState([]);
-  const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
+  const [viewMode, setViewMode] = useState("grid");
 
   const fetchCardSets = async () => {
     try {
@@ -159,7 +168,6 @@ export default function ExploreScreen() {
       setLoading(false);
     };
     initLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refreshCardSets = async () => {
@@ -172,7 +180,6 @@ export default function ExploreScreen() {
     try {
       searchActionSheetRef.current?.hide();
       setLoading(true);
-
       const searchTermToUse = term.trim() ? term : searchTerm;
       addSearchTerm(searchTermToUse);
     } catch (error) {
@@ -186,9 +193,7 @@ export default function ExploreScreen() {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => {
-        /* maybe open set details? */
-      }}
+      onPress={() => {}}
     >
       <View style={styles.logoContainer}>
         <Image source={{ uri: item.logo_url }} style={styles.logo} />
@@ -205,13 +210,14 @@ export default function ExploreScreen() {
     <TouchableOpacity
       style={styles.listItem}
       activeOpacity={0.8}
-      onPress={() => {
-        /* maybe open set details? */
-      }}
+      onPress={() => {}}
     >
-      <Text style={styles.listItemText} numberOfLines={1}>
-        {item.set_name}
-      </Text>
+      <Image source={{ uri: item.logo_url }} style={styles.listItemLogo} />
+      <View style={{ marginLeft: 12, flex: 1 }}>
+        <Text style={styles.listItemText} numberOfLines={1}>
+          {item.set_name}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
