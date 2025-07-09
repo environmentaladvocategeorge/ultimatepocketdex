@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
+  SectionList,
 } from "react-native";
 import { ActionSheetRef } from "react-native-actions-sheet";
 import { Ionicons } from "@expo/vector-icons";
@@ -125,6 +126,14 @@ const styles = StyleSheet.create({
     aspectRatio: 1.5,
     resizeMode: "contain",
   },
+  sectionHeader: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 12,
+    marginLeft: 8,
+    marginBottom: 4,
+  },
 });
 
 export default function ExploreScreen() {
@@ -189,26 +198,32 @@ export default function ExploreScreen() {
     }
   };
 
-  console.log("Card Sets [0]:", cardSets[0]);
+  const getSections = (sets: any[], chunkSize = 1) => {
+    const grouped = sets.reduce((acc: any, set: any) => {
+      if (!acc[set.series_id]) {
+        acc[set.series_id] = {
+          title: set.series_name,
+          data: [],
+        };
+      }
+      acc[set.series_id].data.push(set);
+      return acc;
+    }, {});
 
-  const renderCardSetItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
-      onPress={() => {}}
-    >
-      <View style={styles.logoContainer}>
-        <Image source={{ uri: item.logo_url }} style={styles.logo} />
-        <View style={styles.overlayTextContainer}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.set_name}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+    if (chunkSize === 1) {
+      return Object.values(grouped).map((section: any) => ({
+        title: section.title,
+        data: section.data,
+      }));
+    }
 
-  const renderListItem = ({ item }) => (
+    return Object.values(grouped).map((section: any) => ({
+      title: section.title,
+      data: chunkArray(section.data, chunkSize),
+    }));
+  };
+
+  const renderListItem = ({ item }: any) => (
     <TouchableOpacity
       style={styles.listItem}
       activeOpacity={0.8}
@@ -260,6 +275,67 @@ export default function ExploreScreen() {
     </View>
   );
 
+  const chunkArray = (arr: any[], size: number) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+  };
+
+  const getSectionsWithGridRows = (sets: any) => {
+    const grouped = sets.reduce((acc: any, set: any) => {
+      if (!acc[set.series_id]) {
+        acc[set.series_id] = {
+          title: set.series_name,
+          data: [],
+        };
+      }
+      acc[set.series_id].data.push(set);
+      return acc;
+    }, {});
+
+    return Object.values(grouped).map((section: any) => ({
+      title: section.title,
+      data: chunkArray(section.data, 2),
+    }));
+  };
+
+  const renderGridRow = ({ item }: any) => {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        {item.map((cardSet: any) => (
+          <TouchableOpacity
+            key={cardSet.card_set_id}
+            style={[
+              styles.card,
+              { maxWidth: (Dimensions.get("window").width - 32) / 2 },
+            ]}
+            activeOpacity={0.8}
+            onPress={() => {}}
+          >
+            <View style={styles.logoContainer}>
+              <Image source={{ uri: cardSet.logo_url }} style={styles.logo} />
+              <View style={styles.overlayTextContainer}>
+                <Text style={styles.cardName} numberOfLines={1}>
+                  {cardSet.set_name}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+        {item.length === 1 && (
+          <View style={[styles.card, { backgroundColor: "transparent" }]} />
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ActivityIndicatorModal visible={loading} />
@@ -281,19 +357,25 @@ export default function ExploreScreen() {
         <View style={{ flex: 1 }} />
         {renderToggleButton()}
       </View>
-      <FlatList
-        data={cardSets}
-        keyExtractor={(item) => item.card_set_id}
-        renderItem={viewMode === "grid" ? renderCardSetItem : renderListItem}
-        numColumns={viewMode === "grid" ? 2 : 1}
-        key={viewMode}
-        columnWrapperStyle={
-          viewMode === "grid" ? { justifyContent: "space-between" } : null
-        }
+      <SectionList
+        sections={getSections(cardSets, viewMode === "grid" ? 2 : 1)}
+        keyExtractor={(item, index) => {
+          if (viewMode === "grid") return item[0].card_set_id;
+          return item.card_set_id;
+        }}
+        renderItem={viewMode === "grid" ? renderGridRow : renderListItem}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.sectionHeader}>{title}</Text>
+        )}
         contentContainerStyle={{ paddingBottom: 80 }}
-        showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={refreshCardSets}
+        stickySectionHeadersEnabled={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshCardSets}
+            tintColor={colors.white}
+          />
+        }
       />
     </View>
   );
