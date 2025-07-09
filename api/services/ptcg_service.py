@@ -32,7 +32,7 @@ class PTCGService:
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
-
+            
             ptcg_sets = PTCGSetListResponse(**response.json())
             card_sets = self.map_ptcg_sets_to_card_sets(ptcg_sets, db)
 
