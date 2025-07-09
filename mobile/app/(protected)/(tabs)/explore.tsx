@@ -189,6 +189,8 @@ export default function ExploreScreen() {
     }
   };
 
+  console.log("Card Sets [0]:", cardSets[0]);
+
   const renderCardSetItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}

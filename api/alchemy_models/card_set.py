@@ -40,11 +40,12 @@ class CardSet(Base):
             'ptcgio_id': self.ptcgio_id,
             'set_name': self.set_name,
             'series_id': str(self.series_id),
+            'series_name': self.series.series_name if self.series else None,
             'card_count': self.card_count,
             'logo_url': self.logo_url,
             'create_ts': self.create_ts.isoformat() if self.create_ts else None,
             'updated_ts': self.updated_ts.isoformat() if self.updated_ts else None
         }
-
+    
     def to_json(self):
         return json.dumps(self.to_dict())
