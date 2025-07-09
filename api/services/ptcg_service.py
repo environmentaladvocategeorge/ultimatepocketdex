@@ -34,7 +34,7 @@ class PTCGService:
             response.raise_for_status()
             
             ptcg_sets = PTCGSetListResponse(**response.json())
-            card_sets = self.map_ptcg_sets_to_card_sets(ptcg_sets, db)
+            card_sets = self._map_ptcg_sets_to_card_sets(ptcg_sets, db)
 
             for card_set in card_sets:
                 db.add(card_set)
@@ -46,7 +46,7 @@ class PTCGService:
             logger.error(f"Error fetching card sets: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
 
-    def map_ptcg_sets_to_card_sets(
+    def _map_ptcg_sets_to_card_sets(
         self,
         ptcg_response: PTCGSetListResponse,
         db: Session
@@ -69,7 +69,7 @@ class PTCGService:
                 set_name=ptcg_set.name,
                 series_id=series.series_id,
                 card_count=ptcg_set.total,
-                logo_url=ptcg_set.images.logo,
+                 logo_url=str(ptcg_set.images.logo) if ptcg_set.images and ptcg_set.images.logo else None,
             )
             card_sets.append(card_set)
 
