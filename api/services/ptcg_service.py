@@ -31,10 +31,15 @@ class PTCGService:
         should_sync = False
 
         if not sync_record:
+            logger.info("No existing sync record found for PTCGIO. Syncing data.")
             should_sync = True
         else:
-            if now - sync_record.last_synced_ts > timedelta(hours=12):
+            time_since_last_sync = now - sync_record.last_synced_ts
+            if time_since_last_sync > timedelta(hours=12):
+                logger.info(f"Last sync was {time_since_last_sync} ago. Syncing data.")
                 should_sync = True
+            else:
+                logger.info(f"Last sync was {time_since_last_sync} ago. No sync needed.")
 
         if should_sync:
             url = f"{self.PTCG_BASE_URL}/sets"
@@ -43,6 +48,7 @@ class PTCGService:
             }
 
             try:
+                logger.info(f"Fetching card sets from {url}")
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
 
@@ -50,6 +56,7 @@ class PTCGService:
                 card_sets = self._map_ptcg_sets_to_card_sets(ptcg_sets, db)
 
                 for card_set in card_sets:
+                    logger.debug(f"Adding card set: {card_set.set_name} (ID: {card_set.ptcgio_id})")
                     db.add(card_set)
 
                 if not sync_record:
@@ -62,6 +69,7 @@ class PTCGService:
                     sync_record.last_synced_ts = now
 
                 db.commit()
+                logger.info("Card sets and sync record committed to the database.")
 
                 all_sets = db.query(CardSet).all()
                 return all_sets
@@ -71,6 +79,7 @@ class PTCGService:
                 raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
 
         else:
+            logger.info("Returning existing card sets from the database without syncing.")
             all_sets = db.query(CardSet).all()
             return all_sets
 
