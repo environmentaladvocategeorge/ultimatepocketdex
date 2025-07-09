@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
-  FlatList,
   Image,
   TouchableOpacity,
   Dimensions,
   RefreshControl,
-  SectionList,
+  ScrollView,
+  Animated,
 } from "react-native";
 import { ActionSheetRef } from "react-native-actions-sheet";
 import { Ionicons } from "@expo/vector-icons";
@@ -127,14 +127,111 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   sectionHeader: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "700",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 12,
     marginLeft: 8,
     marginBottom: 4,
+    paddingRight: 8,
+  },
+  sectionHeaderText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  sectionHeaderButton: {
+    padding: 4,
+  },
+  sectionContent: {
+    overflow: "hidden",
   },
 });
+const CollapsibleSection = ({
+  section,
+  viewMode,
+  renderGridRow,
+  renderListItem,
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const animationValue = useRef(new Animated.Value(1)).current;
+  const rotationValue = useRef(new Animated.Value(0)).current;
+
+  const toggleSection = () => {
+    const toValue = isCollapsed ? 1 : 0;
+    const rotationToValue = isCollapsed ? 0 : 1;
+
+    Animated.parallel([
+      Animated.timing(animationValue, {
+        toValue,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(rotationValue, {
+        toValue: rotationToValue,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const maxHeight = animationValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 2000],
+  });
+
+  const opacity = animationValue.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.5, 1],
+  });
+
+  const rotation = rotationValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+
+  return (
+    <View>
+      <TouchableOpacity
+        style={styles.sectionHeader}
+        onPress={toggleSection}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        <View style={styles.sectionHeaderButton}>
+          <Animated.View
+            style={{
+              transform: [{ rotate: rotation }],
+            }}
+          >
+            <Ionicons name="chevron-down" size={20} color={colors.white} />
+          </Animated.View>
+        </View>
+      </TouchableOpacity>
+      <Animated.View
+        style={[
+          styles.sectionContent,
+          {
+            maxHeight,
+            opacity,
+          },
+        ]}
+      >
+        {section.data.map((item, index) => {
+          if (viewMode === "grid") {
+            return <View key={index}>{renderGridRow({ item })}</View>;
+          } else {
+            return (
+              <View key={item.card_set_id}>{renderListItem({ item })}</View>
+            );
+          }
+        })}
+      </Animated.View>
+    </View>
+  );
+};
 
 export default function ExploreScreen() {
   const searchActionSheetRef = useRef<ActionSheetRef>(null);
@@ -204,6 +301,7 @@ export default function ExploreScreen() {
         acc[set.series_id] = {
           title: set.series_name,
           data: [],
+          id: set.series_id,
         };
       }
       acc[set.series_id].data.push(set);
@@ -214,12 +312,14 @@ export default function ExploreScreen() {
       return Object.values(grouped).map((section: any) => ({
         title: section.title,
         data: section.data,
+        id: section.id,
       }));
     }
 
     return Object.values(grouped).map((section: any) => ({
       title: section.title,
       data: chunkArray(section.data, chunkSize),
+      id: section.id,
     }));
   };
 
@@ -283,24 +383,6 @@ export default function ExploreScreen() {
     return chunks;
   };
 
-  const getSectionsWithGridRows = (sets: any) => {
-    const grouped = sets.reduce((acc: any, set: any) => {
-      if (!acc[set.series_id]) {
-        acc[set.series_id] = {
-          title: set.series_name,
-          data: [],
-        };
-      }
-      acc[set.series_id].data.push(set);
-      return acc;
-    }, {});
-
-    return Object.values(grouped).map((section: any) => ({
-      title: section.title,
-      data: chunkArray(section.data, 2),
-    }));
-  };
-
   const renderGridRow = ({ item }: any) => {
     return (
       <View
@@ -357,18 +439,8 @@ export default function ExploreScreen() {
         <View style={{ flex: 1 }} />
         {renderToggleButton()}
       </View>
-      <SectionList
-        sections={getSections(cardSets, viewMode === "grid" ? 2 : 1)}
-        keyExtractor={(item, index) => {
-          if (viewMode === "grid") return item[0].card_set_id;
-          return item.card_set_id;
-        }}
-        renderItem={viewMode === "grid" ? renderGridRow : renderListItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.sectionHeader}>{title}</Text>
-        )}
+      <ScrollView
         contentContainerStyle={{ paddingBottom: 80 }}
-        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -376,7 +448,17 @@ export default function ExploreScreen() {
             tintColor={colors.white}
           />
         }
-      />
+      >
+        {getSections(cardSets, viewMode === "grid" ? 2 : 1).map((section) => (
+          <CollapsibleSection
+            key={section.id}
+            section={section}
+            viewMode={viewMode}
+            renderGridRow={renderGridRow}
+            renderListItem={renderListItem}
+          />
+        ))}
+      </ScrollView>
     </View>
   );
 }
