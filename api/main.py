@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from controllers.user_controller import create_user_controller
-from api.controllers.card_sets_controller import create_card_sets_controller
+from controllers.card_sets_controller import create_card_sets_controller
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
