@@ -39,19 +39,23 @@ export default function ExploreScreen() {
       const searchTermToUse = term.trim() ? term : searchTerm;
       addSearchTerm(searchTermToUse);
 
-      const response = await fetch(`123}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      });
+      const response = await fetch(
+        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-sets`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log(data);
     } catch (error) {
       console.error("Failed to fetch assistants:", error);
     } finally {
