@@ -40,7 +40,7 @@ export default function ProtectedLayout() {
           tabBarLabel: "Explore",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "home" : "home-outline"}
+              name={focused ? "search-sharp" : "search-outline"}
               size={24}
               color={color}
               style={{ height: 24, width: 24 }}

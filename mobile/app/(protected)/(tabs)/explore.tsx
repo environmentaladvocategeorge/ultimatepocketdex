@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import { ActionSheetRef } from "react-native-actions-sheet";
 import { colors } from "@/constants/theme";
 import {
@@ -21,6 +28,41 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 24,
     fontWeight: "bold",
+  },
+  card: {
+    flex: 1,
+    margin: 8,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    overflow: "hidden",
+    maxWidth: (Dimensions.get("window").width - 32) / 2,
+  },
+  logoContainer: {
+    position: "relative",
+  },
+  logo: {
+    width: "100%",
+    height: 72,
+    resizeMode: "contain",
+    borderRadius: 8,
+    padding: 4,
+    marginBottom: 24,
+  },
+  overlayTextContainer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    backgroundColor: "rgba(128,128,128,0.8)",
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  cardName: {
+    color: colors.white,
+    fontWeight: "600",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
 
@@ -52,7 +94,7 @@ export default function ExploreScreen() {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
         const { sets } = await response.json();
-        setCardSets(sets);
+        setCardSets(sets.reverse());
       } catch (error) {
         console.error("Failed to fetch card sets on load:", error);
       } finally {
@@ -77,6 +119,25 @@ export default function ExploreScreen() {
     }
   };
 
+  const renderCardSetItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.8}
+      onPress={() => {
+        /* maybe open set details? */
+      }}
+    >
+      <View style={styles.logoContainer}>
+        <Image source={{ uri: item.logo_url }} style={styles.logo} />
+        <View style={styles.overlayTextContainer}>
+          <Text style={styles.cardName} numberOfLines={1}>
+            {item.set_name}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <ActivityIndicatorModal visible={loading} />
@@ -89,16 +150,20 @@ export default function ExploreScreen() {
         loadAssistants={loadSearch}
       />
       <PlaceholderSearchInput
-        placeholder="Search characters..."
+        placeholder="Search sets..."
         onClick={() => {
           searchActionSheetRef.current?.show();
         }}
       />
-      <View>
-        {cardSets.map((set: any) => (
-          <Text key={set.id}>{set.name}</Text>
-        ))}
-      </View>
+      <FlatList
+        data={cardSets}
+        keyExtractor={(item) => item.card_set_id}
+        renderItem={renderCardSetItem}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: "space-between" }}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }

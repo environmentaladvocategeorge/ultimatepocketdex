@@ -6,6 +6,8 @@ from repository.postgresql_database import PostgresDatabase
 from response_models.ptcg import PTCGSetListResponse
 from utils.logger import get_logger
 from sqlalchemy.orm import Session
+from alchemy_models.data_sync import DataSync
+from datetime import datetime, timedelta, timezone
 
 logger = get_logger(__name__)
 
@@ -24,28 +26,53 @@ class PTCGService:
         self.PTCG_IO_API_KEY: str = 'c03e92cf-e963-4c0b-acc2-f72de242aa92'
 
     def get_sets(self, db: Session) -> list[CardSet]:
-        url = f"{self.PTCG_BASE_URL}/sets"
-        headers = {
-            "X-Api-Key": self.PTCG_IO_API_KEY
-        }
+        sync_record = db.query(DataSync).filter_by(provider_name="PTCGIO").first()
+        now = datetime.now(timezone.utc)
+        should_sync = False
 
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
+        if not sync_record:
+            should_sync = True
+        else:
+            if now - sync_record.last_synced_ts > timedelta(hours=12):
+                should_sync = True
 
-            ptcg_sets = PTCGSetListResponse(**response.json())
-            card_sets = self._map_ptcg_sets_to_card_sets(ptcg_sets, db)
+        if should_sync:
+            url = f"{self.PTCG_BASE_URL}/sets"
+            headers = {
+                "X-Api-Key": self.PTCG_IO_API_KEY
+            }
 
-            for card_set in card_sets:
-                db.add(card_set)
-            db.commit()
+            try:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
 
+                ptcg_sets = PTCGSetListResponse(**response.json())
+                card_sets = self._map_ptcg_sets_to_card_sets(ptcg_sets, db)
+
+                for card_set in card_sets:
+                    db.add(card_set)
+
+                if not sync_record:
+                    sync_record = DataSync(
+                        provider_name="PTCGIO",
+                        last_synced_ts=now
+                    )
+                    db.add(sync_record)
+                else:
+                    sync_record.last_synced_ts = now
+
+                db.commit()
+
+                all_sets = db.query(CardSet).all()
+                return all_sets
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error fetching card sets: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
+
+        else:
             all_sets = db.query(CardSet).all()
             return all_sets
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching card sets: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
 
     def _map_ptcg_sets_to_card_sets(
         self,
