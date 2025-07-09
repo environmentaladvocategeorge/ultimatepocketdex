@@ -13,7 +13,7 @@ const ActivityIndicatorModal = ({ visible }: { visible: boolean }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     if (visible) {
       setShowText(false);
