@@ -2,23 +2,13 @@ from fastapi import HTTPException
 import requests
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
-from repository.postgresql_database import PostgresDatabase
 from response_models.ptcg import PTCGSetListResponse
 from utils.logger import get_logger
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from alchemy_models.data_sync import DataSync
 from datetime import datetime, timedelta, timezone
 
 logger = get_logger(__name__)
-
-db = PostgresDatabase(
-    host="ultimatepocketdex-dev-rds.chwiscumebq1.us-east-1.rds.amazonaws.com",
-    database="upd-db",
-    user="jorgelovesdata",
-    password="Apple123Watch"
-)
-session = db.get_session()
-
 
 class PTCGService:
     def __init__(self):
@@ -71,8 +61,8 @@ class PTCGService:
                 db.commit()
                 logger.info("Card sets and sync record committed to the database.")
 
-                all_sets = db.query(CardSet).all()
-                return all_sets
+                card_sets_with_series = db.query(CardSet).options(joinedload(CardSet.series)).all()
+                return card_sets_with_series
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error fetching card sets: {str(e)}")
@@ -80,8 +70,8 @@ class PTCGService:
 
         else:
             logger.info("Returning existing card sets from the database without syncing.")
-            all_sets = db.query(CardSet).all()
-            return all_sets
+            card_sets_with_series = db.query(CardSet).options(joinedload(CardSet.series)).all()
+            return card_sets_with_series
 
     def _map_ptcg_sets_to_card_sets(
         self,

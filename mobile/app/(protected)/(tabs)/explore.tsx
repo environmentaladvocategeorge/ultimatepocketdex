@@ -45,9 +45,9 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   toggleButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    borderRadius: 8,
     minWidth: 40,
     alignItems: "center",
   },
@@ -235,7 +235,7 @@ export default function ExploreScreen() {
       >
         <Ionicons
           name="grid-outline"
-          size={18}
+          size={16}
           color={viewMode === "grid" ? colors.white : colors.black}
         />
       </TouchableOpacity>
@@ -251,7 +251,7 @@ export default function ExploreScreen() {
       >
         <Ionicons
           name="list-outline"
-          size={18}
+          size={16}
           color={viewMode === "list" ? colors.white : colors.black}
         />
       </TouchableOpacity>
