@@ -32,7 +32,7 @@ class PTCGService:
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
-            
+
             ptcg_sets = PTCGSetListResponse(**response.json())
             card_sets = self._map_ptcg_sets_to_card_sets(ptcg_sets, db)
 
@@ -40,7 +40,8 @@ class PTCGService:
                 db.add(card_set)
             db.commit()
 
-            return card_sets
+            all_sets = db.query(CardSet).all()
+            return all_sets
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching card sets: {str(e)}")
