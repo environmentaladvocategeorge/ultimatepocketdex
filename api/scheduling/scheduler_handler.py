@@ -1,5 +1,8 @@
 import json
 import logging
+
+import concurrent.futures
+from functools import partial
 from alchemy_models.card_set import CardSet
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
@@ -47,7 +50,6 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Internal server error"})
         }
 
-
 def synchronize_card_sets():
     logger.info("Starting card sets synchronization")
 
@@ -58,8 +60,14 @@ def synchronize_card_sets():
 
         mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_sets, session)
 
-        for card_set in mapped_card_sets:
-            cards_by_set_and_series[(card_set.card_set_id, card_set.series_id)] = ptcg_service.get_cards_for_set(card_set.provider_identifier)
+        def get_cards_for_set_with_key(card_set):
+            return ((card_set.card_set_id, card_set.series_id), ptcg_service.get_cards_for_set(card_set.provider_identifier))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_set = {executor.submit(get_cards_for_set_with_key, card_set): card_set for card_set in mapped_card_sets}
+            for future in concurrent.futures.as_completed(future_to_set):
+                key, cards = future.result()
+                cards_by_set_and_series[key] = cards
 
         updated_or_inserted_count = 0
 
