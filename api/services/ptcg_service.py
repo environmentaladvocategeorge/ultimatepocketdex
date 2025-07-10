@@ -2,14 +2,13 @@ from fastapi import HTTPException
 import requests
 from datetime import datetime
 
-from sqlalchemy import Tuple
 from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
 from sqlalchemy.orm import Session
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 logger = get_logger(__name__)
 
