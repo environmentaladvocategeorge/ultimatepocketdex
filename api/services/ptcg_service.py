@@ -9,6 +9,7 @@ from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
 from sqlalchemy.orm import Session
 from typing import Dict, List, Tuple
+import time
 
 logger = get_logger(__name__)
 
@@ -25,9 +26,17 @@ class PTCGService:
         page = 1
         page_size = 250
         all_cards: List[PTCGCard] = []
+        pagination_timeout_seconds = 120
+
+        start_time = time.time()
 
         try:
             while True:
+                elapsed = time.time() - start_time
+                if elapsed > pagination_timeout_seconds:
+                    logger.warning(f"Pagination timeout exceeded while fetching cards for set {set_id}")
+                    raise HTTPException(status_code=504, detail=f"Timeout exceeded fetching cards for set {set_id}")
+
                 params = {
                     "q": f"set.id:{set_id}",
                     "page": page,
@@ -35,7 +44,7 @@ class PTCGService:
                 }
 
                 logger.info(f"Fetching page {page} of cards for set {set_id}")
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(url, headers=headers, params=params, timeout=30) 
                 response.raise_for_status()
 
                 data = response.json().get("data", [])
