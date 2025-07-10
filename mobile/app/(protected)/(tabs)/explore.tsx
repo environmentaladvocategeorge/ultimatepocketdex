@@ -483,7 +483,7 @@ export default function ExploreScreen() {
         loadAssistants={loadSearch}
       />
       <PlaceholderSearchInput
-        placeholder="Search sets..."
+        placeholder="Search any card..."
         onClick={() => {
           searchActionSheetRef.current?.show();
         }}

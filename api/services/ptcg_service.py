@@ -1,8 +1,7 @@
 from fastapi import HTTPException
 import requests
 from datetime import datetime
-from api.alchemy_models.card import Card
-from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse,
+from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
