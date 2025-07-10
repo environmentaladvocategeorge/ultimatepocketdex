@@ -39,7 +39,7 @@ def create_card_sets_controller():
             for series_id, sets_list in grouped_sets.items():
                 series_name = sets_list[0].get('series_name', 'Unknown Series')
                 sections.append({
-                    "id": series_id,
+                    "id": str(series_id),
                     "title": series_name,
                     "data": sets_list
                 })
