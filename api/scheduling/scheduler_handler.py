@@ -1,5 +1,6 @@
 import json
 import logging
+import gc
 
 import concurrent.futures
 from functools import partial
@@ -11,7 +12,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 db = PostgresDatabase(
-    host="ultimatepocketdex-dev-rds.chwiscumebq1.us-east-1.rds.amazonaws.com",
+    host="ultimatepocketdx-dev-rds.chwiscumebq1.us-east-1.rds.amazonaws.com",
     database="upd-db",
     user="jorgelovesdata",
     password="Apple123Watch"
@@ -56,8 +57,6 @@ def synchronize_card_sets():
     session = db.get_session()
     try:
         ptcg_sets = ptcg_service.get_sets()
-        cards_by_set_and_series = {}
-
         mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_sets, session)
 
         updated_or_inserted_count = 0
@@ -85,25 +84,41 @@ def synchronize_card_sets():
                 updated_or_inserted_count += 1
 
         session.commit()
-
         logger.info(f"Successfully synchronized {updated_or_inserted_count} card sets")
 
-        def get_cards_for_set_with_key(card_set: CardSet):
-            return ((card_set.card_set_id, card_set.series_id), ptcg_service.get_cards_for_set(card_set.provider_identifier))
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_set = {executor.submit(get_cards_for_set_with_key, card_set): card_set for card_set in mapped_card_sets}
-            for future in concurrent.futures.as_completed(future_to_set):
-                key, cards = future.result()
-                cards_by_set_and_series[key] = cards
-                
-        logger.info(f"Retrieved {len(cards_by_set_and_series)} sets with cards")
-
-        mapped_card_sets = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)
-        session.add_all(mapped_card_sets)
-        session.commit()
+        total_cards_processed = 0
         
-        logger.info(f"Successfully synchronized {len(mapped_card_sets)} cards")
+        for card_set in mapped_card_sets:
+            logger.info(f"Processing cards for set: {card_set.set_name}")
+            
+            try:
+                cards = ptcg_service.get_cards_for_set(card_set.provider_identifier)
+                
+                if cards:
+                    cards_dict = {(card_set.card_set_id, card_set.series_id): cards}
+                    mapped_cards = ptcg_service.map_ptcg_cards_to_cards(cards_dict)
+                    
+                    for i in range(0, len(mapped_cards), 500):
+                        chunk = mapped_cards[i:i + 500]
+                        session.add_all(chunk)
+                        session.commit()
+                        del chunk
+                        gc.collect()
+                    
+                    total_cards_processed += len(mapped_cards)
+                    logger.info(f"Processed {len(mapped_cards)} cards for set: {card_set.set_name}")
+                
+                del cards
+                del mapped_cards
+                gc.collect()
+                
+            except Exception as e:
+                logger.error(f"Error processing set {card_set.set_name}: {str(e)}")
+                session.rollback()
+                continue
+        
+        logger.info(f"Successfully synchronized {total_cards_processed} cards total")
+        
     except Exception as e:
         logger.error(f"Error during card sets sync: {str(e)}", exc_info=True)
         session.rollback()
