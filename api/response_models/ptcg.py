@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, HttpUrl
-from typing import Optional, Literal
+from typing import Optional, List, Dict, Literal
 
 
 class SetImages(BaseModel):
@@ -27,13 +27,29 @@ class PTCGSet(BaseModel):
 class PTCGSetListResponse(BaseModel):
     data: list[PTCGSet]
 
-from pydantic import BaseModel, ConfigDict, HttpUrl
-from typing import Optional, List, Literal, Dict
-
 
 class CardImages(BaseModel):
-    small: HttpUrl
-    large: HttpUrl
+    small: Optional[HttpUrl]
+    large: Optional[HttpUrl]
+
+
+class Ability(BaseModel):
+    name: str
+    text: str
+    type: str
+
+
+class Attack(BaseModel):
+    name: str
+    cost: Optional[List[str]]
+    convertedEnergyCost: Optional[int]
+    damage: Optional[str]
+    text: Optional[str]
+
+
+class WeaknessOrResistance(BaseModel):
+    type: str
+    value: str
 
 
 class TcgPlayerPrices(BaseModel):
@@ -54,7 +70,18 @@ class CardMarketPrice(BaseModel):
     averageSellPrice: Optional[float]
     lowPrice: Optional[float]
     trendPrice: Optional[float]
-    reverseHoloTrend: Optional[float]
+    germanProLow: Optional[float] = None
+    suggestedPrice: Optional[float] = None
+    reverseHoloSell: Optional[float] = None
+    reverseHoloLow: Optional[float] = None
+    reverseHoloTrend: Optional[float] = None
+    lowPriceExPlus: Optional[float] = None
+    avg1: Optional[float] = None
+    avg7: Optional[float] = None
+    avg30: Optional[float] = None
+    reverseHoloAvg1: Optional[float] = None
+    reverseHoloAvg7: Optional[float] = None
+    reverseHoloAvg30: Optional[float] = None
 
 
 class CardMarket(BaseModel):
@@ -69,8 +96,26 @@ class CardLegalities(BaseModel):
     expanded: Optional[Literal["Legal", "Banned", "Unlimited"]]
 
 
+class SetImages(BaseModel):
+    symbol: Optional[HttpUrl]
+    logo: Optional[HttpUrl]
+
+
+class CardSet(BaseModel):
+    id: str
+    name: str
+    series: Optional[str]
+    printedTotal: Optional[int]
+    total: Optional[int]
+    legalities: Optional[CardLegalities]
+    ptcgoCode: Optional[str]
+    releaseDate: Optional[str]
+    updatedAt: Optional[str]
+    images: Optional[SetImages]
+
+
 class PTCGCard(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = {"extra": "ignore"}
 
     id: str
     name: str
@@ -80,18 +125,20 @@ class PTCGCard(BaseModel):
     hp: Optional[str]
     types: Optional[List[str]]
     evolvesFrom: Optional[str]
-    abilities: Optional[List[Dict[str, str]]]
-    attacks: Optional[List[Dict[str, str]]]
-    weaknesses: Optional[List[Dict[str, str]]]
-    resistances: Optional[List[Dict[str, str]]]
+    abilities: Optional[List[Ability]]
+    attacks: Optional[List[Attack]]
+    weaknesses: Optional[List[WeaknessOrResistance]]
+    resistances: Optional[List[WeaknessOrResistance]]
     retreatCost: Optional[List[str]]
     convertedRetreatCost: Optional[int]
     number: Optional[str]
     artist: Optional[str]
     rarity: Optional[str]
+    flavorText: Optional[str]
     nationalPokedexNumbers: Optional[List[int]]
     legalities: Optional[CardLegalities]
     images: Optional[CardImages]
+    set: Optional[CardSet]
     tcgplayer: Optional[TcgPlayer]
     cardmarket: Optional[CardMarket]
 
