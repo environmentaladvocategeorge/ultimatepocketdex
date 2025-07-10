@@ -1,3 +1,4 @@
+import json
 from fastapi import HTTPException
 import requests
 from datetime import datetime
@@ -8,7 +9,7 @@ from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
 from sqlalchemy.orm import Session
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import time
 
 logger = get_logger(__name__)
@@ -118,6 +119,7 @@ class PTCGService:
 
         for (card_set_id, series_id), ptcg_card_list_response in mapped_ptcg_response.items():
             for ptcg_card in ptcg_card_list_response.data:
+                logger.info("Card data:\n%s", ptcg_card.model_dump_json(indent=4))
                 card = Card(
                     provider_name='ptcg.io',
                     provider_identifier=ptcg_card.id,
@@ -125,14 +127,15 @@ class PTCGService:
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
                     card_price=self.calculate_accurate_card_price(
-                        (tp := ptcg_card.tcgplayer.prices) and (
+                        (tp := ptcg_card.tcgplayer and ptcg_card.tcgplayer.prices) and (
                             tp.get("normal") or
                             tp.get("1stEditionNormal") or
                             tp.get("holofoil") or
                             tp.get("1stEditionHolofoil") or
-                            tp.get("reverseHolofoil")
+                            tp.get("reverseHolofoil") or
+                            tp.get("unlimitedHolofoil")
                         ),
-                        ptcg_card.cardmarket.prices
+                        ptcg_card.cardmarket.prices if ptcg_card.cardmarket else None
                     ),
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
@@ -142,17 +145,24 @@ class PTCGService:
 
         return cards
 
-    def calculate_accurate_card_price(self, tcgplayer_data: TcgPlayerPrices, cardmarket_data: CardMarketPrice) -> float:
-        mid = tcgplayer_data.mid
-        market = tcgplayer_data.market
-        direct_low = tcgplayer_data.directLow
-        avg_sell = cardmarket_data.averageSellPrice
-        suggested = cardmarket_data.suggestedPrice
-        trend = cardmarket_data.trendPrice
-        
+    def calculate_accurate_card_price(
+        self,
+        tcgplayer_data: Optional[TcgPlayerPrices],
+        cardmarket_data: Optional[CardMarketPrice]
+    ) -> float:
+        def get_attr_safe(obj, attr):
+            return getattr(obj, attr, None) if obj is not None else None
+
+        mid = get_attr_safe(tcgplayer_data, 'mid')
+        market = get_attr_safe(tcgplayer_data, 'market')
+        direct_low = get_attr_safe(tcgplayer_data, 'directLow')
+        avg_sell = get_attr_safe(cardmarket_data, 'averageSellPrice')
+        suggested = get_attr_safe(cardmarket_data, 'suggestedPrice')
+        trend = get_attr_safe(cardmarket_data, 'trendPrice')
+
         weighted_sum = 0.0
         total_weight = 0.0
-        
+
         def add_price(price, weight):
             nonlocal weighted_sum, total_weight
             if price is not None:
@@ -165,14 +175,15 @@ class PTCGService:
         add_price(avg_sell, 0.15)
         add_price(suggested, 0.10)
         add_price(trend, 0.05)
-        
+
         if total_weight == 0:
             return 0.0
-        
+
         base_price = weighted_sum / total_weight
-        
+
         if trend is not None and base_price != 0:
             adjustment_factor = 1 + (trend - base_price) / base_price * 0.1
             base_price *= adjustment_factor
-        
+
         return round(base_price, 2)
+
