@@ -119,7 +119,6 @@ class PTCGService:
 
         for (card_set_id, series_id), ptcg_card_list_response in mapped_ptcg_response.items():
             for ptcg_card in ptcg_card_list_response.data:
-                logger.info("Card data:\n%s", ptcg_card.model_dump_json(indent=4))
                 card = Card(
                     provider_name='ptcg.io',
                     provider_identifier=ptcg_card.id,
