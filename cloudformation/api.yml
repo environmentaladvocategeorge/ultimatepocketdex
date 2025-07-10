@@ -45,10 +45,18 @@ Resources:
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
-        GetCardSets:
+        GetCardSet:
           Type: Api
           Properties:
-            Path: /card-sets
+            Path: /card-set
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetCardsForSet:
+          Type: Api
+          Properties:
+            Path: /card-set/{set_id}/card
             Method: GET
             RestApiId: !Ref ApiGateway
             Auth:

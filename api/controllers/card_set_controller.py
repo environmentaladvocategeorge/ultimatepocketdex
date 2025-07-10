@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
 from repository.postgresql_database import PostgresDatabase
+from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from utils.logger import get_logger
 from collections import defaultdict
@@ -16,8 +17,8 @@ db = PostgresDatabase(
     password="Apple123Watch"
 )
 
-def create_card_sets_controller():
-    @router.get("/card-sets")
+def create_card_set_controller():
+    @router.get("/card-set")
     async def get_all_sets():
         try:
             session = db.get_session()
@@ -47,6 +48,23 @@ def create_card_sets_controller():
             return JSONResponse(content={"sets": sections})
         except Exception as e:
             logger.error(f"Error fetching sets: {str(e)}")
+            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+        finally:
+            session.close()
+
+    @router.get("/card-set/{set_id}/card")
+    async def get_all_cards_for_set(set_id: str):
+        try:
+            session = db.get_session()
+            cards = session.query(Card).filter(Card.card_set_id == set_id).all()
+
+            if not cards:
+                return JSONResponse(status_code=404, content={"message": "No cards found for this set"})
+            
+            card_list = [card.to_dict() for card in cards]
+            return JSONResponse(content={"cards": card_list})   
+        except Exception as e:
+            logger.error(f"Error fetching set by ID {set_id}: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
             session.close()
