@@ -124,7 +124,7 @@ class PTCGService:
                     card_name=ptcg_card.name,
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
-                    card_price=self.calculate_accurate_card_price(ptcg_card.tcgplayer, ptcg_card.cardmarket),
+                    card_price=self.calculate_accurate_card_price(ptcg_card.tcgplayer.prices, ptcg_card.cardmarket),
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
                     card_set_id=card_set_id
@@ -133,7 +133,7 @@ class PTCGService:
 
         return cards
 
-    def calculate_accurate_card_price(tcgplayer_data: TcgPlayerPrices, cardmarket_data: CardMarketPrice) -> float:
+    def calculate_accurate_card_price(self, tcgplayer_data: TcgPlayerPrices, cardmarket_data: CardMarketPrice) -> float:
         mid = tcgplayer_data.mid
         market = tcgplayer_data.market
         direct_low = tcgplayer_data.directLow
