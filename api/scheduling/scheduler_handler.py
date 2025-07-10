@@ -1,5 +1,6 @@
 import json
 import logging
+from alchemy_models.card_set import CardSet
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
 
@@ -53,12 +54,37 @@ def synchronize_card_sets():
     session = db.get_session()
     try:
         ptcg_sets = ptcg_service.get_sets()
-        card_sets = ptcg_service._map_ptcg_sets_to_card_sets(ptcg_sets, session)
-        session.add_all(card_sets)
+        mapped_card_sets = ptcg_service._map_ptcg_sets_to_card_sets(ptcg_sets, session)
+
+        updated_or_inserted_count = 0
+
+        for new_set in mapped_card_sets:
+            existing_set = session.query(CardSet).filter_by(
+                provider_name=new_set.provider_name,
+                provider_identifier=new_set.provider_identifier
+            ).first()
+
+            if existing_set:
+                fields_to_check = ["set_name", "series_id", "card_count", "logo_url"]
+                changed = any(
+                    getattr(existing_set, field) != getattr(new_set, field)
+                    for field in fields_to_check
+                )
+
+                if changed:
+                    for field in fields_to_check:
+                        setattr(existing_set, field, getattr(new_set, field))
+                    session.add(existing_set)
+                    updated_or_inserted_count += 1
+            else:
+                session.add(new_set)
+                updated_or_inserted_count += 1
+
         session.commit()
-        logger.info(f"Successfully synchronized {len(card_sets)} card sets")
+        logger.info(f"Successfully synchronized {updated_or_inserted_count} card sets")
     except Exception as e:
         logger.error(f"Error during card sets sync: {str(e)}", exc_info=True)
+        session.rollback()
         raise
     finally:
         session.close()
