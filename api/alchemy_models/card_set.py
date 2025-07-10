@@ -1,6 +1,6 @@
 import uuid
 import json
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -8,10 +8,15 @@ from alchemy_models import Base
 
 class CardSet(Base):
     __tablename__ = 'CardSet'
+    __table_args__ = (
+        UniqueConstraint('provider_name', 'provider_identifier', name='CardSet_provider_unique'),
+    )
 
     card_set_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    ptcgio_id = Column(String(50), nullable=False, unique=True)
-    set_name = Column(String(255), nullable=False)   
+    set_name = Column(String(255), nullable=False, unique=True)
+
+    provider_name = Column(String(100), nullable=False)
+    provider_identifier = Column(String(255), nullable=False)
 
     series_id = Column(UUID(as_uuid=True), ForeignKey('CardSeries.series_id'), nullable=False)
     card_count = Column(Integer, nullable=True)
@@ -25,8 +30,10 @@ class CardSet(Base):
     def __init__(self, **kwargs):
         if 'card_set_id' not in kwargs:
             kwargs['card_set_id'] = uuid.uuid4()
-        if 'ptcgio_id' not in kwargs:
-            raise ValueError("ptcgio_id is required")
+        if 'provider_name' not in kwargs:
+            raise ValueError("provider_name is required")
+        if 'provider_identifier' not in kwargs:
+            raise ValueError("provider_identifier is required")
         if 'set_name' not in kwargs:
             raise ValueError("set_name is required")
         if 'series_id' not in kwargs:
@@ -37,8 +44,9 @@ class CardSet(Base):
     def to_dict(self):
         return {
             'card_set_id': str(self.card_set_id),
-            'ptcgio_id': self.ptcgio_id,
             'set_name': self.set_name,
+            'provider_name': self.provider_name,
+            'provider_identifier': self.provider_identifier,
             'series_id': str(self.series_id),
             'series_name': self.series.series_name if self.series else None,
             'card_count': self.card_count,

@@ -43,10 +43,11 @@ class PTCGService:
             if not series:
                 series = CardSeries(series_name=ptcg_set.series)
                 db.add(series)
-                db.flush() 
+                db.flush()
 
             card_set = CardSet(
-                ptcgio_id=ptcg_set.id,
+                provider_name='ptcg.io',
+                provider_identifier=ptcg_set.id,
                 set_name=ptcg_set.name,
                 series_id=series.series_id,
                 card_count=ptcg_set.total,

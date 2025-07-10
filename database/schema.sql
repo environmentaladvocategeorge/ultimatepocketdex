@@ -20,19 +20,13 @@ CREATE TABLE "CardSeries" (
 -- CARD SET TABLE
 CREATE TABLE "CardSet" (
     card_set_id UUID PRIMARY KEY,
-    ptcgio_id VARCHAR(50) NOT NULL UNIQUE,
-    set_name VARCHAR(255) NOT NULL,
+    set_name VARCHAR(255) NOT NULL UNIQUE,
+    provider_name VARCHAR(100) NOT NULL,
+    provider_identifier VARCHAR(255) NOT NULL,
     series_id UUID NOT NULL REFERENCES "CardSeries"(series_id) ON DELETE CASCADE,
     card_count INTEGER,
     logo_url VARCHAR(1024),
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "DataSync" (
-    data_sync_id UUID PRIMARY KEY,  
-    provider_name VARCHAR(100) NOT NULL UNIQUE,
-    last_synced_ts TIMESTAMPTZ NOT NULL, 
-    create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
-    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (provider_name, provider_identifier)
 );
