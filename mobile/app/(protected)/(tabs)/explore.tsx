@@ -296,30 +296,13 @@ export default function ExploreScreen() {
   };
 
   const getSections = (sets: any[], chunkSize = 1) => {
-    const grouped = sets.reduce((acc: any, set: any) => {
-      if (!acc[set.series_id]) {
-        acc[set.series_id] = {
-          title: set.series_name,
-          data: [],
-          id: set.series_id,
-        };
-      }
-      acc[set.series_id].data.push(set);
-      return acc;
-    }, {});
-
     if (chunkSize === 1) {
-      return Object.values(grouped).map((section: any) => ({
-        title: section.title,
-        data: section.data,
-        id: section.id,
-      }));
+      return sets;
     }
 
-    return Object.values(grouped).map((section: any) => ({
-      title: section.title,
+    return sets.map((section: any) => ({
+      ...section,
       data: chunkArray(section.data, chunkSize),
-      id: section.id,
     }));
   };
 
