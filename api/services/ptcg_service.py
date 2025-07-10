@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 import requests
+from datetime import datetime
 from response_models.ptcg import PTCGSetListResponse
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
@@ -45,13 +46,19 @@ class PTCGService:
                 db.add(series)
                 db.flush()
 
+            try:
+                release_date = datetime.strptime(ptcg_set.releaseDate, "%Y/%m/%d")
+            except ValueError:
+                release_date = None
+
             card_set = CardSet(
                 provider_name='ptcg.io',
                 provider_identifier=ptcg_set.id,
                 set_name=ptcg_set.name,
                 series_id=series.series_id,
-                card_count=ptcg_set.total,
-                logo_url=str(ptcg_set.images.logo) if ptcg_set.images and ptcg_set.images.logo else None,
+                set_card_count=ptcg_set.total,
+                set_logo_url=str(ptcg_set.images.logo) if ptcg_set.images and ptcg_set.images.logo else None,
+                set_release_date=release_date,
             )
             card_sets.append(card_set)
 

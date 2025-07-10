@@ -16,13 +16,13 @@ class PTCGSet(BaseModel):
     id: str
     name: str
     series: str
-    printedTotal: Optional[int] = None
+    printedTotal: int
     total: int
     legalities: Optional[Legalities] = None
     ptcgoCode: Optional[str] = None
-    releaseDate: Optional[str] = None
-    updatedAt: Optional[str] = None
-    images: Optional[SetImages] = None
+    releaseDate: str
+    updatedAt: str
+    images: SetImages
 
 class PTCGSetListResponse(BaseModel):
     data: list[PTCGSet]

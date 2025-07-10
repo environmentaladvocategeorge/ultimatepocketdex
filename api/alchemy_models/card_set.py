@@ -12,18 +12,19 @@ class CardSet(Base):
         UniqueConstraint('provider_name', 'provider_identifier', name='CardSet_provider_unique'),
     )
 
-    card_set_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    card_set_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     set_name = Column(String(255), nullable=False, unique=True)
 
     provider_name = Column(String(100), nullable=False)
     provider_identifier = Column(String(255), nullable=False)
 
     series_id = Column(UUID(as_uuid=True), ForeignKey('CardSeries.series_id'), nullable=False)
-    card_count = Column(Integer, nullable=True)
-    logo_url = Column(String(1024), nullable=True)
+    set_card_count = Column(Integer, nullable=True)
+    set_release_date = Column(DateTime(timezone=True), nullable=True)
+    set_logo_url = Column(String(1024), nullable=True)
 
-    create_ts = Column(DateTime(timezone=True), server_default=func.now())
-    updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    create_ts = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     series = relationship("CardSeries", back_populates="sets", lazy="joined")
 
@@ -49,8 +50,9 @@ class CardSet(Base):
             'provider_identifier': self.provider_identifier,
             'series_id': str(self.series_id),
             'series_name': self.series.series_name if self.series else None,
-            'card_count': self.card_count,
-            'logo_url': self.logo_url,
+            'set_card_count': self.set_card_count,
+            'set_release_date': self.set_release_date.isoformat() if self.set_release_date else None,
+            'set_logo_url': self.set_logo_url,
             'create_ts': self.create_ts.isoformat() if self.create_ts else None,
             'updated_ts': self.updated_ts.isoformat() if self.updated_ts else None
         }
