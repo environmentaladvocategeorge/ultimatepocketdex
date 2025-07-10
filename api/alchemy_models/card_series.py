@@ -15,7 +15,8 @@ class CardSeries(Base):
     create_ts = Column(DateTime(timezone=True), server_default=func.now())
     updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    sets = relationship("CardSet", back_populates="series", lazy="selectin")
+    sets = relationship("CardSet", back_populates="series", lazy="select")
+    cards = relationship("Card", back_populates="series", lazy="select")
 
     def __init__(self, **kwargs):
         if 'series_id' not in kwargs:
@@ -26,12 +27,20 @@ class CardSeries(Base):
         super().__init__(**kwargs)
 
     def to_dict(self):
-        return {
+        data = {
             'series_id': str(self.series_id),
             'series_name': self.series_name,
             'create_ts': self.create_ts.isoformat() if self.create_ts else None,
-            'updated_ts': self.updated_ts.isoformat() if self.updated_ts else None
+            'updated_ts': self.updated_ts.isoformat() if self.updated_ts else None,
         }
+
+        if 'sets' in self.__dict__:
+            data['sets'] = [card_set.to_dict() for card_set in self.sets]
+
+        if 'cards' in self.__dict__:
+            data['cards'] = [card.to_dict() for card in self.cards]
+
+        return data
 
     def to_json(self):
         return json.dumps(self.to_dict())

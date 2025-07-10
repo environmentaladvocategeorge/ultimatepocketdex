@@ -30,3 +30,18 @@ CREATE TABLE "CardSet" (
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider_name, provider_identifier)
 );
+
+-- CARD TABLE
+CREATE TABLE "Card" (
+    card_id UUID PRIMARY KEY,
+    provider_name VARCHAR(100) NOT NULL,
+    provider_identifier VARCHAR(255) NOT NULL,
+    series_id UUID NOT NULL REFERENCES "CardSeries"(series_id) ON DELETE CASCADE,
+    card_set_id UUID NOT NULL REFERENCES "CardSet"(card_set_id) ON DELETE CASCADE,
+    card_name VARCHAR(255) NOT NULL,
+    card_rarity VARCHAR(100),
+    types VARCHAR(50)[] DEFAULT '{}',
+    create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (provider_name, provider_identifier)
+);

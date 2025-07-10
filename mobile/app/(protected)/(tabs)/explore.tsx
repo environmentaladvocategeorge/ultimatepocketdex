@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -146,18 +152,114 @@ const styles = StyleSheet.create({
   sectionContent: {
     overflow: "hidden",
   },
+  contentContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    opacity: 0,
+  },
+  contentContainerVisible: {
+    position: "relative",
+    opacity: 1,
+  },
 });
-const CollapsibleSection = ({
-  section,
-  viewMode,
-  renderGridRow,
-  renderListItem,
-}) => {
+
+const MemoizedListItem = React.memo(({ item, onPress }) => (
+  <TouchableOpacity
+    style={styles.listItem}
+    activeOpacity={0.8}
+    onPress={onPress}
+  >
+    <Image source={{ uri: item.set_logo_url }} style={styles.listItemLogo} />
+    <View style={{ marginLeft: 12, flex: 1 }}>
+      <Text style={styles.listItemText} numberOfLines={1}>
+        {item.set_name}
+      </Text>
+    </View>
+  </TouchableOpacity>
+));
+
+const MemoizedGridCard = React.memo(({ cardSet, onPress }) => (
+  <TouchableOpacity
+    style={[
+      styles.card,
+      { maxWidth: (Dimensions.get("window").width - 32) / 2 },
+    ]}
+    activeOpacity={0.8}
+    onPress={onPress}
+  >
+    <View style={styles.logoContainer}>
+      <Image source={{ uri: cardSet.set_logo_url }} style={styles.logo} />
+      <View style={styles.overlayTextContainer}>
+        <Text style={styles.cardName} numberOfLines={1}>
+          {cardSet.set_name}
+        </Text>
+      </View>
+    </View>
+  </TouchableOpacity>
+));
+
+const MemoizedGridRow = React.memo(({ item, onCardPress }) => (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+    }}
+  >
+    {item.map((cardSet) => (
+      <MemoizedGridCard
+        key={cardSet.card_set_id}
+        cardSet={cardSet}
+        onPress={() => onCardPress(cardSet)}
+      />
+    ))}
+    {item.length === 1 && (
+      <View style={[styles.card, { backgroundColor: "transparent" }]} />
+    )}
+  </View>
+));
+
+const GridContent = React.memo(({ data, onCardPress, isVisible }) => (
+  <View
+    style={[
+      styles.contentContainer,
+      isVisible && styles.contentContainerVisible,
+    ]}
+  >
+    {data.map((item, index) => (
+      <MemoizedGridRow
+        key={`grid-${index}`}
+        item={item}
+        onCardPress={onCardPress}
+      />
+    ))}
+  </View>
+));
+
+const ListContent = React.memo(({ data, onCardPress, isVisible }) => (
+  <View
+    style={[
+      styles.contentContainer,
+      isVisible && styles.contentContainerVisible,
+    ]}
+  >
+    {data.map((item) => (
+      <MemoizedListItem
+        key={item.card_set_id}
+        item={item}
+        onPress={() => onCardPress(item)}
+      />
+    ))}
+  </View>
+));
+
+const CollapsibleSection = React.memo(({ section, viewMode, onCardPress }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const animationValue = useRef(new Animated.Value(1)).current;
   const rotationValue = useRef(new Animated.Value(0)).current;
 
-  const toggleSection = () => {
+  const toggleSection = useCallback(() => {
     const toValue = isCollapsed ? 1 : 0;
     const rotationToValue = isCollapsed ? 0 : 1;
 
@@ -175,7 +277,7 @@ const CollapsibleSection = ({
     ]).start();
 
     setIsCollapsed(!isCollapsed);
-  };
+  }, [isCollapsed, animationValue, rotationValue]);
 
   const maxHeight = animationValue.interpolate({
     inputRange: [0, 1],
@@ -192,6 +294,8 @@ const CollapsibleSection = ({
     outputRange: ["0deg", "180deg"],
   });
 
+  const isGridMode = viewMode === "grid";
+
   return (
     <View>
       <TouchableOpacity
@@ -199,7 +303,9 @@ const CollapsibleSection = ({
         onPress={toggleSection}
         activeOpacity={0.7}
       >
-        <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        <Text
+          style={styles.sectionHeaderText}
+        >{`${section.title} (${section.data.length})`}</Text>
         <View style={styles.sectionHeaderButton}>
           <Animated.View
             style={{
@@ -219,19 +325,22 @@ const CollapsibleSection = ({
           },
         ]}
       >
-        {section.data.map((item, index) => {
-          if (viewMode === "grid") {
-            return <View key={index}>{renderGridRow({ item })}</View>;
-          } else {
-            return (
-              <View key={item.card_set_id}>{renderListItem({ item })}</View>
-            );
-          }
-        })}
+        <View style={{ position: "relative" }}>
+          <GridContent
+            data={section.gridData}
+            onCardPress={onCardPress}
+            isVisible={isGridMode}
+          />
+          <ListContent
+            data={section.listData}
+            onCardPress={onCardPress}
+            isVisible={!isGridMode}
+          />
+        </View>
       </Animated.View>
     </View>
   );
-};
+});
 
 export default function ExploreScreen() {
   const searchActionSheetRef = useRef<ActionSheetRef>(null);
@@ -245,7 +354,23 @@ export default function ExploreScreen() {
   const [cardSets, setCardSets] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
 
-  const fetchCardSets = async () => {
+  const chunkArray = useCallback((arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+  }, []);
+
+  const processedSections = useMemo(() => {
+    return cardSets.map((section) => ({
+      ...section,
+      gridData: chunkArray(section.data || [], 2),
+      listData: section.data || [],
+    }));
+  }, [cardSets, chunkArray]);
+
+  const fetchCardSets = useCallback(async () => {
     try {
       const response = await fetch(
         `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-sets`,
@@ -265,7 +390,7 @@ export default function ExploreScreen() {
     } catch (error) {
       console.error("Failed to fetch card sets:", error);
     }
-  };
+  }, [getToken]);
 
   useEffect(() => {
     const initLoad = async () => {
@@ -274,135 +399,77 @@ export default function ExploreScreen() {
       setLoading(false);
     };
     initLoad();
-  }, []);
+  }, [fetchCardSets]);
 
-  const refreshCardSets = async () => {
+  const refreshCardSets = useCallback(async () => {
     setRefreshing(true);
     await fetchCardSets();
     setRefreshing(false);
-  };
+  }, [fetchCardSets]);
 
-  const loadSearch = async (term = "") => {
-    try {
-      searchActionSheetRef.current?.hide();
-      setLoading(true);
-      const searchTermToUse = term.trim() ? term : searchTerm;
-      addSearchTerm(searchTermToUse);
-    } catch (error) {
-      console.error("Failed to fetch assistants:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSections = (sets: any[], chunkSize = 1) => {
-    if (chunkSize === 1) {
-      return sets;
-    }
-
-    return sets.map((section: any) => ({
-      ...section,
-      data: chunkArray(section.data, chunkSize),
-    }));
-  };
-
-  const renderListItem = ({ item }: any) => (
-    <TouchableOpacity
-      style={styles.listItem}
-      activeOpacity={0.8}
-      onPress={() => {}}
-    >
-      <Image source={{ uri: item.set_logo_url }} style={styles.listItemLogo} />
-      <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text style={styles.listItemText} numberOfLines={1}>
-          {item.set_name}
-        </Text>
-      </View>
-    </TouchableOpacity>
+  const loadSearch = useCallback(
+    async (term = "") => {
+      try {
+        searchActionSheetRef.current?.hide();
+        setLoading(true);
+        const searchTermToUse = term.trim() ? term : searchTerm;
+        addSearchTerm(searchTermToUse);
+      } catch (error) {
+        console.error("Failed to fetch assistants:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchTerm, addSearchTerm]
   );
 
-  const renderToggleButton = () => (
-    <View style={styles.toggleContainer}>
-      <TouchableOpacity
-        style={[
-          styles.toggleButton,
-          viewMode === "grid"
-            ? styles.toggleButtonActive
-            : styles.toggleButtonInactive,
-        ]}
-        onPress={() => setViewMode("grid")}
-        activeOpacity={0.8}
-      >
-        <Ionicons
-          name="grid-outline"
-          size={16}
-          color={viewMode === "grid" ? colors.white : colors.black}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.toggleButton,
-          viewMode === "list"
-            ? styles.toggleButtonActive
-            : styles.toggleButtonInactive,
-        ]}
-        onPress={() => setViewMode("list")}
-        activeOpacity={0.8}
-      >
-        <Ionicons
-          name="list-outline"
-          size={16}
-          color={viewMode === "list" ? colors.white : colors.black}
-        />
-      </TouchableOpacity>
-    </View>
-  );
+  const handleCardPress = useCallback((cardSet) => {
+    console.log("Card pressed:", cardSet);
+  }, []);
 
-  const chunkArray = (arr: any[], size: number) => {
-    const chunks = [];
-    for (let i = 0; i < arr.length; i += size) {
-      chunks.push(arr.slice(i, i + size));
-    }
-    return chunks;
-  };
+  const handleViewModeChange = useCallback((mode) => {
+    setViewMode(mode);
+  }, []);
 
-  const renderGridRow = ({ item }: any) => {
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        {item.map((cardSet: any) => (
-          <TouchableOpacity
-            key={cardSet.card_set_id}
-            style={[
-              styles.card,
-              { maxWidth: (Dimensions.get("window").width - 32) / 2 },
-            ]}
-            activeOpacity={0.8}
-            onPress={() => {}}
-          >
-            <View style={styles.logoContainer}>
-              <Image
-                source={{ uri: cardSet.set_logo_url }}
-                style={styles.logo}
-              />
-              <View style={styles.overlayTextContainer}>
-                <Text style={styles.cardName} numberOfLines={1}>
-                  {cardSet.set_name}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-        {item.length === 1 && (
-          <View style={[styles.card, { backgroundColor: "transparent" }]} />
-        )}
+  const renderToggleButton = useCallback(
+    () => (
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.toggleButton,
+            viewMode === "grid"
+              ? styles.toggleButtonActive
+              : styles.toggleButtonInactive,
+          ]}
+          onPress={() => handleViewModeChange("grid")}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="grid-outline"
+            size={16}
+            color={viewMode === "grid" ? colors.white : colors.black}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.toggleButton,
+            viewMode === "list"
+              ? styles.toggleButtonActive
+              : styles.toggleButtonInactive,
+          ]}
+          onPress={() => handleViewModeChange("list")}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="list-outline"
+            size={16}
+            color={viewMode === "list" ? colors.white : colors.black}
+          />
+        </TouchableOpacity>
       </View>
-    );
-  };
+    ),
+    [viewMode, handleViewModeChange]
+  );
 
   return (
     <View style={styles.container}>
@@ -426,6 +493,11 @@ export default function ExploreScreen() {
         {renderToggleButton()}
       </View>
       <ScrollView
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={5}
+        windowSize={10}
         contentContainerStyle={{ paddingBottom: 80 }}
         refreshControl={
           <RefreshControl
@@ -435,13 +507,12 @@ export default function ExploreScreen() {
           />
         }
       >
-        {getSections(cardSets, viewMode === "grid" ? 2 : 1).map((section) => (
+        {processedSections.map((section) => (
           <CollapsibleSection
             key={section.id}
             section={section}
             viewMode={viewMode}
-            renderGridRow={renderGridRow}
-            renderListItem={renderListItem}
+            onCardPress={handleCardPress}
           />
         ))}
       </ScrollView>

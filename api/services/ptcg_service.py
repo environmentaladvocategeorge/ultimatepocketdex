@@ -1,7 +1,8 @@
 from fastapi import HTTPException
 import requests
 from datetime import datetime
-from response_models.ptcg import PTCGSetListResponse
+from api.alchemy_models.card import Card
+from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse,
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
@@ -14,6 +15,41 @@ class PTCGService:
     def __init__(self):
         self.PTCG_BASE_URL: str = "https://api.pokemontcg.io/v2"
         self.PTCG_IO_API_KEY: str = 'c03e92cf-e963-4c0b-acc2-f72de242aa92'
+
+    def get_cards_for_set(self, set_id: str) -> PTCGCardListResponse:
+        url = f"{self.PTCG_BASE_URL}/cards"
+        headers = {
+            "X-Api-Key": self.PTCG_IO_API_KEY
+        }
+        page = 1
+        page_size = 250
+        all_cards: List[PTCGCard] = []
+
+        try:
+            while True:
+                params = {
+                    "q": f"set.id:{set_id}",
+                    "page": page,
+                    "pageSize": page_size
+                }
+
+                logger.info(f"Fetching page {page} of cards for set {set_id}")
+                response = requests.get(url, headers=headers, params=params)
+                response.raise_for_status()
+
+                data = response.json().get("data", [])
+                if not data:
+                    break
+
+                all_cards.extend(PTCGCard(**card) for card in data)
+                page += 1
+
+            logger.info(f"Retrieved {len(all_cards)} cards for set {set_id}")
+            return PTCGCardListResponse(data=all_cards)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching cards for set {set_id}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error fetching cards for set: {str(e)}")
 
     def get_sets(self) -> PTCGSetListResponse:
         url = f"{self.PTCG_BASE_URL}/sets"
@@ -40,6 +76,12 @@ class PTCGService:
         card_sets: List[CardSet] = []
 
         for ptcg_set in ptcg_response.data:
+            cards = self.get_cards_for_set(ptcg_set.id)
+            if ptcg_set == ptcg_response.data[0]:
+                logger.info(f"Processing set: {ptcg_set.name} with ID: {ptcg_set.id}")
+                logger.info(f"Total cards in set: {len(cards.data)}")
+                logger.info(f"cards: {cards}")
+
             series = db.query(CardSeries).filter_by(series_name=ptcg_set.series).first()
             if not series:
                 series = CardSeries(series_name=ptcg_set.series)
