@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import joinedload
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
+from alchemy_models.card_set import CardSet
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,9 +23,13 @@ def create_card_sets_controller():
     @router.get("/card-sets")
     async def get_all_sets():
         try:
-            logger.info("Fetching all Pokémon TCG sets...")
-            sets = ptcg_service.get_sets(session)
-            
+            logger.info("Fetching all Pokémon TCG sets from the database...")
+            sets = (
+                session.query(CardSet)
+                .options(joinedload(CardSet.series))
+                .all()
+            )
+
             sets_dict = [s.to_dict() for s in sets]
             return JSONResponse(content={"sets": sets_dict})
 
