@@ -65,7 +65,7 @@ def synchronize_card_sets():
             ).first()
 
             if existing_set:
-                fields_to_check = ["set_name", "series_id", "card_count", "logo_url"]
+                fields_to_check = ["set_name", "series_id", "set_card_count", "set_logo_url"]
                 changed = any(
                     getattr(existing_set, field) != getattr(new_set, field)
                     for field in fields_to_check
