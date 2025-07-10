@@ -52,19 +52,22 @@ def lambda_handler(event, context):
 
 def synchronize_card_sets():
     logger.info("Starting card sets synchronization")
-
     session = db.get_session()
+
     try:
         ptcg_sets = ptcg_service.get_sets()
+        all_mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_sets, session)
 
-        updated_or_inserted_count = 0
-        batch_size = 50
+        updated_or_inserted_total = 0
 
-        for i in range(0, len(ptcg_sets), batch_size):
-            ptcg_set_batch = ptcg_sets[i:i+batch_size]
-            mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_set_batch, session)
+        # Process card sets in batches
+        BATCH_SIZE = 20
+        for i in range(0, len(all_mapped_card_sets), BATCH_SIZE):
+            batch_sets = all_mapped_card_sets[i:i + BATCH_SIZE]
+            cards_by_set_and_series = {}
 
-            for new_set in mapped_card_sets:
+            # Upsert sets
+            for new_set in batch_sets:
                 existing_set = session.query(CardSet).filter_by(
                     provider_name=new_set.provider_name,
                     provider_identifier=new_set.provider_identifier
@@ -76,50 +79,50 @@ def synchronize_card_sets():
                         getattr(existing_set, field) != getattr(new_set, field)
                         for field in fields_to_check
                     )
+
                     if changed:
                         for field in fields_to_check:
                             setattr(existing_set, field, getattr(new_set, field))
                         session.add(existing_set)
-                        updated_or_inserted_count += 1
+                        updated_or_inserted_total += 1
                 else:
                     session.add(new_set)
-                    updated_or_inserted_count += 1
+                    updated_or_inserted_total += 1
 
             session.commit()
-            del mapped_card_sets
-            del ptcg_set_batch
 
-        logger.info(f"Successfully synchronized {updated_or_inserted_count} card sets")
-
-        all_card_sets = session.query(CardSet).all()
-        batch_size = 25
-        total_cards_synced = 0
-
-        for i in range(0, len(all_card_sets), batch_size):
-            card_set_batch = all_card_sets[i:i+batch_size]
+            # Fetch cards in parallel for current batch
+            def get_cards_for_set_with_key(card_set: CardSet):
+                return (
+                    (card_set.card_set_id, card_set.series_id),
+                    ptcg_service.get_cards_for_set(card_set.provider_identifier)
+                )
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                future_to_key = {
-                    executor.submit(
-                        lambda cs: ((cs.card_set_id, cs.series_id), ptcg_service.get_cards_for_set(cs.provider_identifier)),
-                        card_set
-                    ): card_set
-                    for card_set in card_set_batch
+                future_to_set = {
+                    executor.submit(get_cards_for_set_with_key, card_set): card_set
+                    for card_set in batch_sets
                 }
+                for future in concurrent.futures.as_completed(future_to_set):
+                    key, cards = future.result()
+                    cards_by_set_and_series[key] = cards
 
-                for future in concurrent.futures.as_completed(future_to_key):
-                    key, ptcg_card_list = future.result()
-                    mapped_cards = ptcg_service.map_ptcg_cards_to_cards({key: ptcg_card_list})
-                    session.add_all(mapped_cards)
-                    session.commit()
-                    total_cards_synced += len(mapped_cards)
-                    del ptcg_card_list
-                    del mapped_cards
+            logger.info(f"Retrieved {len(cards_by_set_and_series)} sets with cards in batch {i // BATCH_SIZE + 1}")
 
-            del card_set_batch
-            del future_to_key
+            mapped_cards = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)
+            session.add_all(mapped_cards)
+            session.commit()
 
-        logger.info(f"Successfully synchronized {total_cards_synced} cards")
+            logger.info(f"Successfully synchronized {len(mapped_cards)} cards in batch {i // BATCH_SIZE + 1}")
+
+            # Free memory
+            session.expunge_all()
+            session.flush()
+            cards_by_set_and_series.clear()
+            mapped_cards.clear()
+
+        logger.info(f"Finished synchronizing all sets. Total sets upserted: {updated_or_inserted_total}")
+
     except Exception as e:
         logger.error(f"Error during card sets sync: {str(e)}", exc_info=True)
         session.rollback()
