@@ -32,7 +32,7 @@ def create_card_sets_controller():
             grouped_sets = defaultdict(list)
             for card_set in sets:
                 series_id = card_set.series_id
-                series_name = card_set.series.name if card_set.series else "Unknown Series"
+                series_name = card_set.series.series_name if card_set.series else "Unknown Series"
                 grouped_sets[series_id].append(card_set.to_dict())
             
             sections = []
