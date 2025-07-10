@@ -13,18 +13,19 @@ db = PostgresDatabase(
     user="jorgelovesdata",
     password="Apple123Watch"
 )
-session = db.get_session()
 cognito_service = CognitoService()
 
 def create_user_controller():  
     @router.get("/user-profile")
     async def get_user_profile(user: User = Depends(cognito_service.extract_token)):
         try:
+            session = db.get_session()
             logger.info(f"User {user.user_id} requested their own profile.")
             user_dict = user.to_dict()
             return JSONResponse(content=user_dict)
         except Exception as e:
             logger.error(f"Error retrieving user profile: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
-        
+        finally:
+            session.close()
     return router

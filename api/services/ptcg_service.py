@@ -1,35 +1,6 @@
 from fastapi import HTTPException
 import requests
 from response_models.ptcg import PTCGSetListResponse
-from utils.logger import get_logger
-
-logger = get_logger(__name__)
-
-class PTCGService:
-    def __init__(self):
-        self.PTCG_BASE_URL: str = "https://api.pokemontcg.io/v2"
-        self.PTCG_IO_API_KEY: str = 'c03e92cf-e963-4c0b-acc2-f72de242aa92'
-
-    def get_sets(self) -> PTCGSetListResponse:
-        url = f"{self.PTCG_BASE_URL}/sets"
-        headers = {
-            "X-Api-Key": self.PTCG_IO_API_KEY
-        }
-
-        try:
-            logger.info(f"Fetching card sets from {url}")
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-
-            return PTCGSetListResponse(**response.json())
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching card sets: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
-        
-    from fastapi import HTTPException
-import requests
-from response_models.ptcg import PTCGSetListResponse
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
@@ -72,7 +43,7 @@ class PTCGService:
             if not series:
                 series = CardSeries(series_name=ptcg_set.series)
                 db.add(series)
-                db.flush()
+                db.flush() 
 
             card_set = CardSet(
                 ptcgio_id=ptcg_set.id,
