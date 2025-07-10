@@ -124,7 +124,7 @@ class PTCGService:
                     card_name=ptcg_card.name,
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
-                    card_price=self.calculate_accurate_card_price(ptcg_card.tcgplayer.prices, ptcg_card.cardmarket),
+                    card_price=self.calculate_accurate_card_price(ptcg_card.tcgplayer.prices.get("normal"), ptcg_card.cardmarket),
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
                     card_set_id=card_set_id
