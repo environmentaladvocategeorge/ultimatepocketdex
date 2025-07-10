@@ -373,7 +373,7 @@ export default function ExploreScreen() {
   const fetchCardSets = useCallback(async () => {
     try {
       const response = await fetch(
-        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-sets`,
+        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-set`,
         {
           method: "GET",
           headers: {
@@ -423,8 +423,22 @@ export default function ExploreScreen() {
     [searchTerm, addSearchTerm]
   );
 
-  const handleCardPress = useCallback((cardSet) => {
-    console.log("Card pressed:", cardSet);
+  const handleCardPress = useCallback(async (cardSet: any) => {
+    const response = await fetch(
+      `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-set/${cardSet.card_set_id}/card`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} ${response.statusText}`);
+    }
+    const { cards } = await response.json();
+    console.log("Cards for set:", cards);
   }, []);
 
   const handleViewModeChange = useCallback((mode) => {
