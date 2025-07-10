@@ -2,7 +2,7 @@ from fastapi import HTTPException
 import requests
 from datetime import datetime
 
-from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse
+from response_models.ptcg import CardMarketPrice, PTCGCard, PTCGCardListResponse, PTCGSetListResponse, TcgPlayerPrices
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
@@ -133,86 +133,37 @@ class PTCGService:
 
         return cards
 
-    def calculate_accurate_card_price(tcgplayer_data, cardmarket_data, card_type='normal'):
-        """
-        Calculate an accurate card price using both TCGPlayer and Cardmarket data.
+    def calculate_accurate_card_price(tcgplayer_data: TcgPlayerPrices, cardmarket_data: CardMarketPrice) -> float:
+        mid = tcgplayer_data.mid
+        market = tcgplayer_data.market
+        direct_low = tcgplayer_data.directLow
+        avg_sell = cardmarket_data.averageSellPrice
+        suggested = cardmarket_data.suggestedPrice
+        trend = cardmarket_data.trendPrice
         
-        Args:
-            tcgplayer_data: Dictionary containing TCGPlayer price data
-            cardmarket_data: Dictionary containing Cardmarket price data  
-            card_type: 'normal' or 'reverseHolofoil' for TCGPlayer data
+        weighted_sum = 0.0
+        total_weight = 0.0
         
-        Returns:
-            Dictionary with calculated prices and confidence metrics
-        """
-        
-        # Extract TCGPlayer prices (prioritize market price as it's most accurate)
-        tcg_prices = tcgplayer_data.get('prices', {}).get(card_type, {})
-        tcg_market = tcg_prices.get('market')
-        tcg_mid = tcg_prices.get('mid')
-        
-        # Extract Cardmarket prices
-        cm_prices = cardmarket_data.get('prices', {})
-        cm_trend = cm_prices.get('trendPrice')
-        cm_avg_sell = cm_prices.get('averageSellPrice')
-        cm_avg7 = cm_prices.get('avg7')  # 7-day average
-        cm_avg30 = cm_prices.get('avg30')  # 30-day average
-        
-        # Calculate weighted average based on data reliability
-        price_components = []
-        weights = []
-        
-        # TCGPlayer market price (highest weight - most accurate according to research)
-        if tcg_market:
-            price_components.append(tcg_market)
-            weights.append(0.35)  # 35% weight
-        
-        # Cardmarket trend price (second highest weight)
-        if cm_trend:
-            price_components.append(cm_trend)
-            weights.append(0.25)  # 25% weight
-        
-        # Cardmarket average sell price
-        if cm_avg_sell:
-            price_components.append(cm_avg_sell)
-            weights.append(0.20)  # 20% weight
-        
-        # TCGPlayer mid price (lower weight as it's less accurate than market)
-        if tcg_mid:
-            price_components.append(tcg_mid)
-            weights.append(0.10)  # 10% weight
-        
-        # Recent averages from Cardmarket (7-day preferred over 30-day)
-        if cm_avg7:
-            price_components.append(cm_avg7)
-            weights.append(0.10)  # 10% weight
-        elif cm_avg30:
-            price_components.append(cm_avg30)
-            weights.append(0.10)  # 10% weight
-        
-        if price_components and weights:
-            total_weight = sum(weights)
-            normalized_weights = [w/total_weight for w in weights]
-            
-            weighted_price = sum(price * weight for price, weight in zip(price_components, normalized_weights))
-        else:
-            weighted_price = None
-        
-        all_prices = []
-        if tcg_market: all_prices.append(tcg_market)
-        if tcg_mid: all_prices.append(tcg_mid)
-        if cm_trend: all_prices.append(cm_trend)
-        if cm_avg_sell: all_prices.append(cm_avg_sell)
-        if cm_avg7: all_prices.append(cm_avg7)
-        
-        confidence_score = 0
-        price_variance = 0
-        
-        if len(all_prices) >= 2:
-            avg_price = sum(all_prices) / len(all_prices)
-            price_variance = sum((p - avg_price) ** 2 for p in all_prices) / len(all_prices)
-            
-            confidence_score = min(100, (len(all_prices) * 20) - (price_variance * 5))
-            confidence_score = max(0, confidence_score)
+        def add_price(price, weight):
+            nonlocal weighted_sum, total_weight
+            if price is not None:
+                weighted_sum += price * weight
+                total_weight += weight
 
-        return round(weighted_price, 2) if weighted_price else None
+        add_price(mid, 0.35)
+        add_price(market, 0.25)
+        add_price(direct_low, 0.10)
+        add_price(avg_sell, 0.15)
+        add_price(suggested, 0.10)
+        add_price(trend, 0.05)
+        
+        if total_weight == 0:
+            return 0.0
+        
+        base_price = weighted_sum / total_weight
+        
+        if trend is not None and base_price != 0:
+            adjustment_factor = 1 + (trend - base_price) / base_price * 0.1
+            base_price *= adjustment_factor
+        
+        return round(base_price, 2)
