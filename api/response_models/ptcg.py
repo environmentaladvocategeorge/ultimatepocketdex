@@ -28,9 +28,13 @@ class PTCGSetListResponse(BaseModel):
     data: list[PTCGSet]
 
 
+from typing import Optional, List, Dict, Literal
+from pydantic import BaseModel, HttpUrl
+
+
 class CardImages(BaseModel):
-    small: Optional[HttpUrl]
-    large: Optional[HttpUrl]
+    small: Optional[HttpUrl] = None
+    large: Optional[HttpUrl] = None
 
 
 class Ability(BaseModel):
@@ -41,10 +45,10 @@ class Ability(BaseModel):
 
 class Attack(BaseModel):
     name: str
-    cost: Optional[List[str]]
-    convertedEnergyCost: Optional[int]
-    damage: Optional[str]
-    text: Optional[str]
+    cost: Optional[List[str]] = None
+    convertedEnergyCost: Optional[int] = None
+    damage: Optional[str] = None
+    text: Optional[str] = None
 
 
 class WeaknessOrResistance(BaseModel):
@@ -53,23 +57,23 @@ class WeaknessOrResistance(BaseModel):
 
 
 class TcgPlayerPrices(BaseModel):
-    low: Optional[float]
-    mid: Optional[float]
-    high: Optional[float]
-    market: Optional[float]
-    directLow: Optional[float]
+    low: Optional[float] = None
+    mid: Optional[float] = None
+    high: Optional[float] = None
+    market: Optional[float] = None
+    directLow: Optional[float] = None
 
 
 class TcgPlayer(BaseModel):
-    url: Optional[HttpUrl]
-    updatedAt: Optional[str]
-    prices: Optional[Dict[str, TcgPlayerPrices]]
+    url: Optional[HttpUrl] = None
+    updatedAt: Optional[str] = None
+    prices: Optional[Dict[str, TcgPlayerPrices]] = None
 
 
 class CardMarketPrice(BaseModel):
-    averageSellPrice: Optional[float]
-    lowPrice: Optional[float]
-    trendPrice: Optional[float]
+    averageSellPrice: Optional[float] = None
+    lowPrice: Optional[float] = None
+    trendPrice: Optional[float] = None
     germanProLow: Optional[float] = None
     suggestedPrice: Optional[float] = None
     reverseHoloSell: Optional[float] = None
@@ -85,33 +89,33 @@ class CardMarketPrice(BaseModel):
 
 
 class CardMarket(BaseModel):
-    url: Optional[HttpUrl]
-    updatedAt: Optional[str]
-    prices: Optional[CardMarketPrice]
+    url: Optional[HttpUrl] = None
+    updatedAt: Optional[str] = None
+    prices: Optional[CardMarketPrice] = None
 
 
 class CardLegalities(BaseModel):
-    unlimited: Optional[Literal["Legal", "Banned", "Unlimited"]]
-    standard: Optional[Literal["Legal", "Banned", "Unlimited"]]
-    expanded: Optional[Literal["Legal", "Banned", "Unlimited"]]
+    unlimited: Optional[Literal["Legal", "Banned", "Unlimited"]] = None
+    standard: Optional[Literal["Legal", "Banned", "Unlimited"]] = None
+    expanded: Optional[Literal["Legal", "Banned", "Unlimited"]] = None
 
 
 class SetImages(BaseModel):
-    symbol: Optional[HttpUrl]
-    logo: Optional[HttpUrl]
+    symbol: Optional[HttpUrl] = None
+    logo: Optional[HttpUrl] = None
 
 
 class CardSet(BaseModel):
     id: str
     name: str
-    series: Optional[str]
-    printedTotal: Optional[int]
-    total: Optional[int]
-    legalities: Optional[CardLegalities]
-    ptcgoCode: Optional[str]
-    releaseDate: Optional[str]
-    updatedAt: Optional[str]
-    images: Optional[SetImages]
+    series: Optional[str] = None
+    printedTotal: Optional[int] = None
+    total: Optional[int] = None
+    legalities: Optional[CardLegalities] = None
+    ptcgoCode: Optional[str] = None
+    releaseDate: Optional[str] = None
+    updatedAt: Optional[str] = None
+    images: Optional[SetImages] = None
 
 
 class PTCGCard(BaseModel):
@@ -119,28 +123,28 @@ class PTCGCard(BaseModel):
 
     id: str
     name: str
-    supertype: Optional[str]
-    subtypes: Optional[List[str]]
-    level: Optional[str]
-    hp: Optional[str]
-    types: Optional[List[str]]
-    evolvesFrom: Optional[str]
-    abilities: Optional[List[Ability]]
-    attacks: Optional[List[Attack]]
-    weaknesses: Optional[List[WeaknessOrResistance]]
-    resistances: Optional[List[WeaknessOrResistance]]
-    retreatCost: Optional[List[str]]
-    convertedRetreatCost: Optional[int]
-    number: Optional[str]
-    artist: Optional[str]
-    rarity: Optional[str]
-    flavorText: Optional[str]
-    nationalPokedexNumbers: Optional[List[int]]
-    legalities: Optional[CardLegalities]
-    images: Optional[CardImages]
-    set: Optional[CardSet]
-    tcgplayer: Optional[TcgPlayer]
-    cardmarket: Optional[CardMarket]
+    supertype: Optional[str] = None
+    subtypes: Optional[List[str]] = None
+    level: Optional[str] = None
+    hp: Optional[str] = None
+    types: Optional[List[str]] = None
+    evolvesFrom: Optional[str] = None
+    abilities: Optional[List[Ability]] = None
+    attacks: Optional[List[Attack]] = None
+    weaknesses: Optional[List[WeaknessOrResistance]] = None
+    resistances: Optional[List[WeaknessOrResistance]] = None
+    retreatCost: Optional[List[str]] = None
+    convertedRetreatCost: Optional[int] = None
+    number: Optional[str] = None
+    artist: Optional[str] = None
+    rarity: Optional[str] = None
+    flavorText: Optional[str] = None
+    nationalPokedexNumbers: Optional[List[int]] = None
+    legalities: Optional[CardLegalities] = None
+    images: Optional[CardImages] = None
+    set: Optional[CardSet] = None
+    tcgplayer: Optional[TcgPlayer] = None
+    cardmarket: Optional[CardMarket] = None
 
 
 class PTCGCardListResponse(BaseModel):
