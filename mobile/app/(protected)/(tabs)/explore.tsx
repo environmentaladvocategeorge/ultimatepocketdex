@@ -261,7 +261,7 @@ export default function ExploreScreen() {
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
       const { sets } = await response.json();
-      setCardSets(sets.reverse());
+      setCardSets(sets);
     } catch (error) {
       console.error("Failed to fetch card sets:", error);
     }
@@ -329,7 +329,7 @@ export default function ExploreScreen() {
       activeOpacity={0.8}
       onPress={() => {}}
     >
-      <Image source={{ uri: item.logo_url }} style={styles.listItemLogo} />
+      <Image source={{ uri: item.set_logo_url }} style={styles.listItemLogo} />
       <View style={{ marginLeft: 12, flex: 1 }}>
         <Text style={styles.listItemText} numberOfLines={1}>
           {item.set_name}
@@ -402,7 +402,10 @@ export default function ExploreScreen() {
             onPress={() => {}}
           >
             <View style={styles.logoContainer}>
-              <Image source={{ uri: cardSet.logo_url }} style={styles.logo} />
+              <Image
+                source={{ uri: cardSet.set_logo_url }}
+                style={styles.logo}
+              />
               <View style={styles.overlayTextContainer}>
                 <Text style={styles.cardName} numberOfLines={1}>
                   {cardSet.set_name}

@@ -24,6 +24,7 @@ def create_card_sets_controller():
             sets = (
                 session.query(CardSet)
                 .options(joinedload(CardSet.series))
+                .order_by(CardSet.set_release_date.desc())
                 .all()
             )
             sets_dict = [s.to_dict() for s in sets]
