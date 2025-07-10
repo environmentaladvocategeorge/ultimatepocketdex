@@ -88,16 +88,15 @@ def synchronize_card_sets():
 
         logger.info(f"Successfully synchronized {updated_or_inserted_count} card sets")
 
-        def get_cards_for_set_with_key(card_set):
+        def get_cards_for_set_with_key(card_set: CardSet):
             return ((card_set.card_set_id, card_set.series_id), ptcg_service.get_cards_for_set(card_set.provider_identifier))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_set = {executor.submit(get_cards_for_set_with_key, card_set): card_set for card_set in mapped_card_sets}
+            future_to_set = {executor.submit(get_cards_for_set_with_key, card_set): card_set for card_set in mapped_card_sets[]}
             for future in concurrent.futures.as_completed(future_to_set):
                 key, cards = future.result()
                 cards_by_set_and_series[key] = cards
-
-
+                
         logger.info(f"Retrieved {len(cards_by_set_and_series)} sets with cards")
 
         mapped_card_sets = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)

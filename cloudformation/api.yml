@@ -79,9 +79,7 @@ Resources:
       Handler: scheduling.scheduler_handler.lambda_handler
       Runtime: python3.9
       Timeout: 900
-      Environment:
-        Variables:
-          ENV: !Ref Environment
+      MemorySize: 512
       Policies:
         - Version: "2012-10-17"
           Statement:
