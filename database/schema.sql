@@ -41,6 +41,8 @@ CREATE TABLE "Card" (
     card_name VARCHAR(255) NOT NULL,
     card_rarity VARCHAR(100),
     types VARCHAR(50)[] DEFAULT '{}',
+    card_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    card_image_url VARCHAR(1024),
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider_name, provider_identifier)

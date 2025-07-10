@@ -54,7 +54,12 @@ def synchronize_card_sets():
     session = db.get_session()
     try:
         ptcg_sets = ptcg_service.get_sets()
-        mapped_card_sets = ptcg_service._map_ptcg_sets_to_card_sets(ptcg_sets, session)
+        cards_by_set_and_series = {}
+
+        mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_sets, session)
+
+        for card_set in mapped_card_sets:
+            cards_by_set_and_series[(card_set.card_set_id, card_set.series_id)] = ptcg_service.get_cards_for_set(card_set.provider_identifier)
 
         updated_or_inserted_count = 0
 
@@ -81,7 +86,14 @@ def synchronize_card_sets():
                 updated_or_inserted_count += 1
 
         session.commit()
+
         logger.info(f"Successfully synchronized {updated_or_inserted_count} card sets")
+
+        mapped_card_sets = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)
+        session.add_all(mapped_card_sets)
+        session.commit()
+        
+        logger.info(f"Successfully synchronized {len(mapped_card_sets)} cards")
     except Exception as e:
         logger.error(f"Error during card sets sync: {str(e)}", exc_info=True)
         session.rollback()

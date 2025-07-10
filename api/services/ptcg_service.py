@@ -1,12 +1,15 @@
 from fastapi import HTTPException
 import requests
 from datetime import datetime
+
+from sqlalchemy import Tuple
 from response_models.ptcg import PTCGCard, PTCGCardListResponse, PTCGSetListResponse
+from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Dict, List
 
 logger = get_logger(__name__)
 
@@ -67,7 +70,7 @@ class PTCGService:
             logger.error(f"Error fetching card sets: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error fetching card sets: {str(e)}")
 
-    def _map_ptcg_sets_to_card_sets(
+    def map_ptcg_sets_to_card_sets(
         self,
         ptcg_response: PTCGSetListResponse,
         db: Session
@@ -75,12 +78,6 @@ class PTCGService:
         card_sets: List[CardSet] = []
 
         for ptcg_set in ptcg_response.data:
-            cards = self.get_cards_for_set(ptcg_set.id)
-            if ptcg_set == ptcg_response.data[0]:
-                logger.info(f"Processing set: {ptcg_set.name} with ID: {ptcg_set.id}")
-                logger.info(f"Total cards in set: {len(cards.data)}")
-                logger.info(f"cards: {cards}")
-
             series = db.query(CardSeries).filter_by(series_name=ptcg_set.series).first()
             if not series:
                 series = CardSeries(series_name=ptcg_set.series)
@@ -104,4 +101,26 @@ class PTCGService:
             card_sets.append(card_set)
 
         return card_sets
+    
+    def map_ptcg_cards_to_cards(
+        self,
+        mapped_ptcg_response: Dict[Tuple[str, str], PTCGCardListResponse],
+    ) -> List[Card]:
+        cards: List[Card] = []
 
+        for (card_set_id, series_id), ptcg_card_list_response in mapped_ptcg_response.items():
+            for ptcg_card in ptcg_card_list_response.data:
+                card = Card(
+                    provider_name='ptcg.io',
+                    provider_identifier=ptcg_card.id,
+                    card_name=ptcg_card.name,
+                    card_rarity=ptcg_card.rarity,
+                    types=ptcg_card.types or [],
+                    card_price=ptcg_card.cardmarket.prices.avg1 if ptcg_card.cardmarket else 0.00,
+                    card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
+                    series_id=series_id,
+                    card_set_id=card_set_id
+                )
+                cards.append(card)
+
+        return cards
