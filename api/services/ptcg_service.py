@@ -132,7 +132,7 @@ class PTCGService:
                             tp.get("1stEditionHolofoil") or
                             tp.get("reverseHolofoil")
                         ),
-                        ptcg_card.cardmarket
+                        ptcg_card.cardmarket.prices
                     ),
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
