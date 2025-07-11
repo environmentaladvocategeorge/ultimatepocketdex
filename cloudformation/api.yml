@@ -53,10 +53,10 @@ Resources:
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
-        GetCardsForSet:
+        GetCardSetById:
           Type: Api
           Properties:
-            Path: /card-set/{set_id}/card
+            Path: /card-set/{set_id}
             Method: GET
             RestApiId: !Ref ApiGateway
             Auth:
@@ -96,10 +96,10 @@ Resources:
                 - rds:*
               Resource: "*"
       Events:
-        TwiceDailySchedule:
+        SynchronizeCardSetsDaily:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 0,12 * * ? *)"
+            Schedule: "cron(0 9 * * ? *)"
             Input: '{"event_type": "synchronize_card_sets"}'
 
 Outputs:

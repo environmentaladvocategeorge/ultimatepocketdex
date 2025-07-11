@@ -52,20 +52,26 @@ def create_card_set_controller():
         finally:
             session.close()
 
-    @router.get("/card-set/{set_id}/card")
-    async def get_all_cards_for_set(set_id: str):
+    @router.get("/card-set/{set_id}")
+    async def get_card_set_by_id(set_id: str):
+        session = db.get_session()
         try:
-            session = db.get_session()
-            cards = session.query(Card).filter(Card.card_set_id == set_id).all()
+            card_set = (
+                session.query(CardSet)
+                .options(joinedload(CardSet.cards))
+                .filter(CardSet.card_set_id == set_id)
+                .first()
+            )
 
-            if not cards:
-                return JSONResponse(status_code=404, content={"message": "No cards found for this set"})
-            
-            card_list = [card.to_dict() for card in cards]
-            return JSONResponse(content={"cards": card_list})   
+            if not card_set:
+                return JSONResponse(status_code=404, content={"message": "Card set not found"})
+
+            return JSONResponse(content=card_set.to_dict())
+        
         except Exception as e:
-            logger.error(f"Error fetching set by ID {set_id}: {str(e)}")
+            logger.error(f"Error fetching card set by ID {set_id}: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+        
         finally:
             session.close()
     return router

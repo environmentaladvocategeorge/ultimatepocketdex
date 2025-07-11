@@ -26,6 +26,7 @@ import {
 } from "@/components";
 import { useSearch } from "@/context/SearchContext";
 import { useAuthentication } from "@/context/AuthenticationContext";
+import { useRouter } from "expo-router";
 
 const styles = StyleSheet.create({
   container: {
@@ -344,6 +345,7 @@ const CollapsibleSection = React.memo(({ section, viewMode, onCardPress }) => {
 
 export default function ExploreScreen() {
   const searchActionSheetRef = useRef<ActionSheetRef>(null);
+  const router = useRouter();
   const { getToken } = useAuthentication();
   const { addSearchTerm } = useSearch();
 
@@ -423,22 +425,8 @@ export default function ExploreScreen() {
     [searchTerm, addSearchTerm]
   );
 
-  const handleCardPress = useCallback(async (cardSet: any) => {
-    const response = await fetch(
-      `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-set/${cardSet.card_set_id}/card`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
-    );
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
-    const { cards } = await response.json();
-    console.log("Cards for set:", cards);
+  const handleCardPress = useCallback((cardSet: any) => {
+    router.push(`set/${cardSet.card_set_id}`);
   }, []);
 
   const handleViewModeChange = useCallback((mode) => {
