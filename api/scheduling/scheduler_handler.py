@@ -49,7 +49,7 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"message": "Internal server error"})
         }
-\
+
 def synchronize_card_sets():
     logger.info("Starting card sets synchronization")
     session = db.get_session()
