@@ -3,6 +3,7 @@ import requests
 from requests.exceptions import HTTPError
 from datetime import datetime
 
+from alchemy_models.card_price_history import CardPriceHistory
 from response_models.ptcg import CardMarketPrice, PTCGCard, PTCGCardListResponse, PTCGSetListResponse, TcgPlayerPrices
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
@@ -127,6 +128,18 @@ class PTCGService:
 
         for (card_set_id, series_id), ptcg_card_list_response in mapped_ptcg_response.items():
             for ptcg_card in ptcg_card_list_response.data:
+                price = self.calculate_accurate_card_price(
+                    (tp := ptcg_card.tcgplayer and ptcg_card.tcgplayer.prices) and (
+                        tp.get("normal") or
+                        tp.get("1stEditionNormal") or
+                        tp.get("holofoil") or
+                        tp.get("1stEditionHolofoil") or
+                        tp.get("reverseHolofoil") or
+                        tp.get("unlimitedHolofoil")
+                    ),
+                    ptcg_card.cardmarket.prices if ptcg_card.cardmarket else None
+                )
+
                 card = Card(
                     provider_name='ptcg.io',
                     provider_identifier=ptcg_card.id,
@@ -134,22 +147,19 @@ class PTCGService:
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
                     card_number=ptcg_card.number,
-                    card_price=self.calculate_accurate_card_price(
-                        (tp := ptcg_card.tcgplayer and ptcg_card.tcgplayer.prices) and (
-                            tp.get("normal") or
-                            tp.get("1stEditionNormal") or
-                            tp.get("holofoil") or
-                            tp.get("1stEditionHolofoil") or
-                            tp.get("reverseHolofoil") or
-                            tp.get("unlimitedHolofoil")
-                        ),
-                        ptcg_card.cardmarket.prices if ptcg_card.cardmarket else None
-                    ),
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
                     card_set_id=card_set_id
                 )
-                cards.append(card)
+
+                price_history = CardPriceHistory(
+                    card_id=card.card_id,
+                    price=price
+                )
+
+                card.latest_price_id = price_history.price_id
+
+                cards.append((card, price_history))
 
         return cards
 

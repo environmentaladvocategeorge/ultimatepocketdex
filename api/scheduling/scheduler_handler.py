@@ -107,14 +107,15 @@ def synchronize_card_sets():
             logger.info(f"Retrieved {len(cards_by_set_and_series)} sets with cards in batch {i // BATCH_SIZE + 1}")
 
             mapped_cards = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)
-            for new_card in mapped_cards:
-                existing_card = session.query(Card).filter_by(card_id=new_card.card_id).first()
+            for card, price_history in mapped_cards:
+                existing_card = session.query(Card).filter_by(card_id=card.card_id).first()
                 if existing_card:
-                    if existing_card.card_price != new_card.card_price:
-                        existing_card.card_price = new_card.card_price
-                        session.add(existing_card)
+                    session.add(price_history)
+                    existing_card.latest_price_id = price_history.price_id
+                    session.add(existing_card)
                 else:
-                    session.add(new_card)
+                    session.add(card)
+                    session.add(price_history)
 
             session.commit()
             logger.info(f"Successfully synchronized {len(mapped_cards)} cards in batch {i // BATCH_SIZE + 1}")

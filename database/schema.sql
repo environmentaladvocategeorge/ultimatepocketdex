@@ -31,7 +31,7 @@ CREATE TABLE "CardSet" (
     UNIQUE (provider_name, provider_identifier)
 );
 
--- CARD TABLE
+-- CARD TABLE (UPDATED)
 CREATE TABLE "Card" (
     card_id UUID PRIMARY KEY,
     provider_name VARCHAR(100) NOT NULL,
@@ -42,9 +42,20 @@ CREATE TABLE "Card" (
     card_number VARCHAR(50) NOT NULL,
     card_rarity VARCHAR(100),
     types VARCHAR(50)[] DEFAULT '{}',
-    card_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    latest_price_id UUID REFERENCES "CardPriceHistory"(price_id) ON DELETE SET NULL,
+    last_price_update_ts TIMESTAMPTZ,
     card_image_url VARCHAR(1024),
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider_name, provider_identifier)
+);
+
+-- CARD PRICE HISTORY TABLE
+CREATE TABLE "CardPriceHistory" (
+    price_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    card_id UUID NOT NULL REFERENCES "Card"(card_id) ON DELETE CASCADE,
+    price NUMERIC(10, 2) NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

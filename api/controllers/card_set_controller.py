@@ -58,7 +58,9 @@ def create_card_set_controller():
         try:
             card_set = (
                 session.query(CardSet)
-                .options(joinedload(CardSet.cards))
+                .options(
+                    joinedload(CardSet.cards).joinedload(Card.latest_price)
+                )
                 .filter(CardSet.card_set_id == set_id)
                 .first()
             )
