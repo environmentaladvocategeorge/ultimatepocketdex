@@ -508,10 +508,10 @@ export default function SetsScreen() {
         setSearchTerm={setSearchTerm}
         isFocused={isFocused}
         setIsFocused={setIsFocused}
-        loadAssistants={loadSearch}
+        loadSearch={loadSearch}
       />
       <PlaceholderSearchInput
-        placeholder="Search any set or series..."
+        placeholder={searchTerm || "Search any set or series..."}
         onClick={() => {
           searchActionSheetRef.current?.show();
         }}
