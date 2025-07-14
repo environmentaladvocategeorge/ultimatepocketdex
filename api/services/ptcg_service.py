@@ -1,6 +1,6 @@
-import json
 from fastapi import HTTPException
 import requests
+from requests.exceptions import HTTPError
 from datetime import datetime
 
 from response_models.ptcg import CardMarketPrice, PTCGCard, PTCGCardListResponse, PTCGSetListResponse, TcgPlayerPrices
@@ -45,8 +45,16 @@ class PTCGService:
                 }
 
                 logger.info(f"Fetching page {page} of cards for set {set_id}")
-                response = requests.get(url, headers=headers, params=params, timeout=30) 
-                response.raise_for_status()
+                try:
+                    response = requests.get(url, headers=headers, params=params, timeout=30)
+                    response.raise_for_status()
+                except HTTPError as e:
+                    if response.status_code == 404:
+                        logger.info(f"Received 404 for page {page} of set {set_id}, assuming no more cards.")
+                        break
+                    else:
+                        logger.error(f"Error fetching cards for set {set_id}: {str(e)}")
+                        raise HTTPException(status_code=500, detail=f"Error fetching cards for set: {str(e)}")
 
                 data = response.json().get("data", [])
                 if not data:
