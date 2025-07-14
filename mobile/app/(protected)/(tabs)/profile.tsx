@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
   header: {
     width: "100%",
     height: 120,
-    backgroundColor: "#3161b0",
+    backgroundColor: "#4d7cc9",
   },
   avatarContainer: {
     position: "absolute",
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     height: 3,
-    backgroundColor: "#3161b0",
+    backgroundColor: "#4d7cc9",
     borderRadius: 2,
   },
   scene: {

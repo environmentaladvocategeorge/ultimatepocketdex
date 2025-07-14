@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useAuthentication } from "@/context/AuthenticationContext";
-import { Ionicons, Octicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 
 export default function ProtectedLayout() {
@@ -55,8 +55,8 @@ export default function ProtectedLayout() {
           headerShown: false,
           tabBarLabel: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <Octicons
-              name={focused ? "person-fill" : "person"}
+            <Ionicons
+              name={focused ? "person-outline" : "person"}
               size={24}
               color={color}
               style={{ height: 24, width: 24 }}

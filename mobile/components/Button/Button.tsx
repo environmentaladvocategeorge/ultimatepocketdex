@@ -57,7 +57,7 @@ const iconMap: Record<string, React.ElementType> = {
 const styles = StyleSheet.create({
   filledButton: {
     width: "100%",
-    backgroundColor: "#3161b0",
+    backgroundColor: "#4d7cc9",
     padding: 15,
     borderRadius: 12,
     marginBottom: 16,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     width: "100%",
     padding: 15,
     borderRadius: 12,
-    borderColor: "#3161b0",
+    borderColor: "#4d7cc9",
     borderWidth: 1,
     alignItems: "center",
     marginBottom: 16,

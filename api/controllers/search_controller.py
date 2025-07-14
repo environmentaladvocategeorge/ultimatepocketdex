@@ -1,11 +1,14 @@
 from operator import or_
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
+from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
+from alchemy_models.card_price_history import CardPriceHistory
 from repository.postgresql_database import PostgresDatabase
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from utils.logger import get_logger
+from sqlalchemy.orm import aliased
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -16,6 +19,8 @@ db = PostgresDatabase(
     user="jorgelovesdata",
     password="Apple123Watch"
 )
+
+latest_price_alias = aliased(CardPriceHistory)
 
 def create_search_controller():
     @router.get("/search")
@@ -30,8 +35,11 @@ def create_search_controller():
             offset = (page - 1) * pageSize
             
             query = session.query(Card).options(
-                joinedload(Card.card_set).joinedload(CardSet.series)
-            ).order_by(Card.card_id)
+                joinedload(Card.card_set).joinedload(CardSet.series),
+                joinedload(Card.latest_price)
+            ).join(
+                latest_price_alias, Card.latest_price_id == latest_price_alias.price_id, isouter=True
+            ).order_by(desc(latest_price_alias.price))
             
             total_count = query.count()
             
