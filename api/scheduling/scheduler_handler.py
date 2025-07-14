@@ -111,11 +111,17 @@ def synchronize_card_sets():
                 existing_card = session.query(Card).filter_by(card_id=card.card_id).first()
                 if existing_card:
                     session.add(price_history)
+                    session.flush()
                     existing_card.latest_price_id = price_history.price_id
                     session.add(existing_card)
                 else:
                     session.add(card)
+                    session.flush()
+                    price_history.card_id = card.card_id
                     session.add(price_history)
+                    session.flush()
+                    card.latest_price_id = price_history.price_id
+                    session.add(card)
 
             session.commit()
             logger.info(f"Successfully synchronized {len(mapped_cards)} cards in batch {i // BATCH_SIZE + 1}")
