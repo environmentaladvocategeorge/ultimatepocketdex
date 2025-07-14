@@ -37,7 +37,13 @@ class Card(Base):
     card_set = relationship("CardSet", back_populates="cards", lazy="joined")
 
     latest_price = relationship("CardPriceHistory", foreign_keys=[latest_price_id], lazy="joined")
-    price_history = relationship("CardPriceHistory", back_populates="card", order_by="desc(CardPriceHistory.recorded_at)", lazy="select")
+    price_history = relationship(
+        "CardPriceHistory",
+        back_populates="card",
+        order_by="desc(CardPriceHistory.recorded_at)",
+        lazy="select",
+        foreign_keys="[CardPriceHistory.card_id]"
+    )
 
     _uuid_generator = UUIDGenerator()
 
