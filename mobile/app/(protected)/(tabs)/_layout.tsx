@@ -29,15 +29,14 @@ export default function ProtectedLayout() {
           height: 72,
           backgroundColor: colors.darkGrey,
         },
-        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.white,
         tabBarInactiveTintColor: colors.grey,
       }}
     >
       <Tabs.Screen
-        name="sets"
+        name="explore"
         options={{
-          tabBarLabel: "Sets",
+          tabBarLabel: "Explore",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "search-sharp" : "search-outline"}
@@ -50,11 +49,11 @@ export default function ProtectedLayout() {
         redirect={!isAuthenticated}
       />
       <Tabs.Screen
-        name="profile"
+        name="explore"
         options={{
           headerTitle: "",
           headerShown: false,
-          tabBarLabel: "Profile",
+          tabBarLabel: "Explore",
           tabBarIcon: ({ color, focused }) => (
             <Octicons
               name={focused ? "person-fill" : "person"}
