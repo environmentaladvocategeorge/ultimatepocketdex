@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from alchemy_models import Base
+from utils.uuid_generator import UUIDGenerator
 
 class CardSet(Base):
     __tablename__ = 'CardSet'
@@ -29,9 +30,9 @@ class CardSet(Base):
     series = relationship("CardSeries", back_populates="sets", lazy="joined")
     cards = relationship("Card", back_populates="card_set", lazy="select")
 
+    _uuid_generator = UUIDGenerator()
+
     def __init__(self, **kwargs):
-        if 'card_set_id' not in kwargs:
-            kwargs['card_set_id'] = uuid.uuid4()
         if 'provider_name' not in kwargs:
             raise ValueError("provider_name is required")
         if 'provider_identifier' not in kwargs:
@@ -40,7 +41,9 @@ class CardSet(Base):
             raise ValueError("set_name is required")
         if 'series_id' not in kwargs:
             raise ValueError("series_id is required")
-        
+        if 'card_set_id' not in kwargs:
+            name_for_uuid = f"{kwargs['set_name']}|{kwargs['provider_name']}|{kwargs['provider_identifier']}"
+            kwargs['card_set_id'] = self._uuid_generator.generate(name_for_uuid)
         super().__init__(**kwargs)
 
     def to_dict(self):

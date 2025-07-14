@@ -2,8 +2,8 @@ import json
 import logging
 
 import concurrent.futures
-from functools import partial
 from alchemy_models.card_set import CardSet
+from alchemy_models.card import Card
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
 
@@ -60,13 +60,11 @@ def synchronize_card_sets():
 
         updated_or_inserted_total = 0
 
-        # Process card sets in batches
         BATCH_SIZE = 20
         for i in range(0, len(all_mapped_card_sets), BATCH_SIZE):
             batch_sets = all_mapped_card_sets[i:i + BATCH_SIZE]
             cards_by_set_and_series = {}
 
-            # Upsert sets
             for new_set in batch_sets:
                 existing_set = session.query(CardSet).filter_by(
                     provider_name=new_set.provider_name,
@@ -91,7 +89,6 @@ def synchronize_card_sets():
 
             session.commit()
 
-            # Fetch cards in parallel for current batch
             def get_cards_for_set_with_key(card_set: CardSet):
                 return (
                     (card_set.card_set_id, card_set.series_id),
@@ -110,12 +107,18 @@ def synchronize_card_sets():
             logger.info(f"Retrieved {len(cards_by_set_and_series)} sets with cards in batch {i // BATCH_SIZE + 1}")
 
             mapped_cards = ptcg_service.map_ptcg_cards_to_cards(cards_by_set_and_series)
-            session.add_all(mapped_cards)
-            session.commit()
+            for new_card in mapped_cards:
+                existing_card = session.query(Card).filter_by(card_id=new_card.card_id).first()
+                if existing_card:
+                    if existing_card.card_price != new_card.card_price:
+                        existing_card.card_price = new_card.card_price
+                        session.add(existing_card)
+                else:
+                    session.add(new_card)
 
+            session.commit()
             logger.info(f"Successfully synchronized {len(mapped_cards)} cards in batch {i // BATCH_SIZE + 1}")
 
-            # Free memory
             session.expunge_all()
             session.flush()
             cards_by_set_and_series.clear()
