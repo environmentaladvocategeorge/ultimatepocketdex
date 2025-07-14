@@ -16,7 +16,12 @@ class CardPriceHistory(Base):
     price = Column(Numeric(10, 2), nullable=False)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    card = relationship("Card", back_populates="price_history", lazy="joined")
+    card = relationship(
+        "Card",
+        back_populates="price_history",
+        lazy="joined",
+        foreign_keys=[card_id]
+    )
 
     def to_dict(self):
         data = {
