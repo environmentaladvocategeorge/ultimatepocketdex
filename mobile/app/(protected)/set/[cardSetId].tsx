@@ -151,6 +151,8 @@ export default function CardSet() {
 
         const setData = await response.json();
 
+        console.log(setData.cards);
+
         // Sort cards by price (highest first)
         if (setData.cards) {
           setData.cards.sort((a, b) => {

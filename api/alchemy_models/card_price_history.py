@@ -31,9 +31,6 @@ class CardPriceHistory(Base):
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None,
         }
 
-        if hasattr(self, 'card') and self.card:
-            data['card'] = self.card.to_dict()
-
         return data
 
     def to_json(self):
