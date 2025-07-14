@@ -35,9 +35,9 @@ export default function ProtectedLayout() {
       }}
     >
       <Tabs.Screen
-        name="explore"
+        name="sets"
         options={{
-          tabBarLabel: "Explore",
+          tabBarLabel: "Sets",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "search-sharp" : "search-outline"}

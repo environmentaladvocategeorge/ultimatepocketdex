@@ -11,7 +11,7 @@ export default function LandingScreen() {
   const { isAuthenticated } = useAuthentication();
 
   if (isAuthenticated) {
-    return <Redirect href="/explore" />;
+    return <Redirect href="/sets" />;
   }
 
   return (

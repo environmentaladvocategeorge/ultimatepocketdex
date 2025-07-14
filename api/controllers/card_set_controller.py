@@ -1,4 +1,4 @@
-from operator import or_
+from operator import and_, or_
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
@@ -28,13 +28,17 @@ def create_card_set_controller():
             query = session.query(CardSet).join(CardSet.series).options(joinedload(CardSet.series)).order_by(CardSet.set_release_date.desc())
 
             if searchTerm:
-                search_term_ilike = f"%{searchTerm}%"
-                query = query.filter(
-                    or_(
-                        CardSet.set_name.ilike(search_term_ilike),
-                        CardSeries.series_name.ilike(search_term_ilike)
+                words = searchTerm.split()
+                filters = []
+                for word in words:
+                    pattern = f"%{word}%"
+                    filters.append(
+                        or_(
+                            CardSet.set_name.ilike(pattern),
+                            CardSeries.series_name.ilike(pattern)
+                        )
                     )
-                )
+                query = query.filter(and_(*filters))
 
             grouped_sets = defaultdict(list)
             for card_set in query.all():

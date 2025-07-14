@@ -343,7 +343,7 @@ const CollapsibleSection = React.memo(({ section, viewMode, onCardPress }) => {
   );
 });
 
-export default function ExploreScreen() {
+export default function SetsScreen() {
   const searchActionSheetRef = useRef<ActionSheetRef>(null);
   const router = useRouter();
   const { getToken } = useAuthentication();
@@ -414,15 +414,41 @@ export default function ExploreScreen() {
       try {
         searchActionSheetRef.current?.hide();
         setLoading(true);
+
         const searchTermToUse = term.trim() ? term : searchTerm;
+        if (!searchTermToUse) {
+          await fetchCardSets();
+          return;
+        }
+
         addSearchTerm(searchTermToUse);
+
+        const response = await fetch(
+          `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/card-set?searchTerm=${encodeURIComponent(
+            searchTermToUse
+          )}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getToken()}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        const { sets } = await response.json();
+        setCardSets(sets);
       } catch (error) {
-        console.error("Failed to fetch assistants:", error);
+        console.error("Failed to fetch filtered card sets:", error);
       } finally {
         setLoading(false);
       }
     },
-    [searchTerm, addSearchTerm]
+    [searchTerm, getToken, addSearchTerm]
   );
 
   const handleCardPress = useCallback((cardSet: any) => {
@@ -485,7 +511,7 @@ export default function ExploreScreen() {
         loadAssistants={loadSearch}
       />
       <PlaceholderSearchInput
-        placeholder="Search any card..."
+        placeholder="Search any set or series..."
         onClick={() => {
           searchActionSheetRef.current?.show();
         }}
