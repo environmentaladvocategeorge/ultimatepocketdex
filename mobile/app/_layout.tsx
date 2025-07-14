@@ -59,7 +59,7 @@ const InitialLayout = () => {
       segments[0] === "(protected)" && segments[1] === "(tabs)";
 
     if (isAuthenticated && !inTabsGroup) {
-      router.replace("/sets");
+      router.replace("/explore");
     } else if (!isAuthenticated) {
       router.replace("/landing");
     }

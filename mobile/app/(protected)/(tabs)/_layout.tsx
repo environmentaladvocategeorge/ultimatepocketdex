@@ -49,17 +49,17 @@ export default function ProtectedLayout() {
         redirect={!isAuthenticated}
       />
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
           headerTitle: "",
           headerShown: false,
-          tabBarLabel: "Explore",
+          tabBarLabel: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <Octicons
               name={focused ? "person-fill" : "person"}
               size={24}
               color={color}
-              style={{ height: 20, width: 24 }}
+              style={{ height: 24, width: 24 }}
             />
           ),
         }}

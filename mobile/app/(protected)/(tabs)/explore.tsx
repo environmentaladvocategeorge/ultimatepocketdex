@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function SetsScreen() {
+export default function ExploreScreen() {
   const { getToken } = useAuthentication();
   return <View style={styles.container}></View>;
 }
