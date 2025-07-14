@@ -31,7 +31,6 @@ CREATE TABLE "CardSet" (
     UNIQUE (provider_name, provider_identifier)
 );
 
--- CARD TABLE (UPDATED)
 CREATE TABLE "Card" (
     card_id UUID PRIMARY KEY,
     provider_name VARCHAR(100) NOT NULL,
@@ -42,15 +41,13 @@ CREATE TABLE "Card" (
     card_number VARCHAR(50) NOT NULL,
     card_rarity VARCHAR(100),
     types VARCHAR(50)[] DEFAULT '{}',
-    latest_price_id UUID REFERENCES "CardPriceHistory"(price_id) ON DELETE SET NULL,
-    last_price_update_ts TIMESTAMPTZ,
+    latest_price_id UUID,
     card_image_url VARCHAR(1024),
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider_name, provider_identifier)
 );
 
--- CARD PRICE HISTORY TABLE
 CREATE TABLE "CardPriceHistory" (
     price_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     card_id UUID NOT NULL REFERENCES "Card"(card_id) ON DELETE CASCADE,
@@ -59,3 +56,10 @@ CREATE TABLE "CardPriceHistory" (
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE "Card"
+ADD CONSTRAINT fk_latest_price
+FOREIGN KEY (latest_price_id)
+REFERENCES "CardPriceHistory"(price_id)
+ON DELETE SET NULL
+DEFERRABLE INITIALLY DEFERRED;
