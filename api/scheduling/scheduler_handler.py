@@ -49,7 +49,7 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"message": "Internal server error"})
         }
-
+\
 def synchronize_card_sets():
     logger.info("Starting card sets synchronization")
     session = db.get_session()
@@ -60,7 +60,7 @@ def synchronize_card_sets():
 
         updated_or_inserted_total = 0
 
-        BATCH_SIZE = 20
+        BATCH_SIZE = 50
         for i in range(0, len(all_mapped_card_sets), BATCH_SIZE):
             batch_sets = all_mapped_card_sets[i:i + BATCH_SIZE]
             cards_by_set_and_series = {}
@@ -72,7 +72,7 @@ def synchronize_card_sets():
                 ).first()
 
                 if existing_set:
-                    fields_to_check = ["set_name", "series_id", "set_card_count", "set_logo_url"]
+                    fields_to_check = ["set_name", "set_card_count", "set_logo_url"]
                     changed = any(
                         getattr(existing_set, field) != getattr(new_set, field)
                         for field in fields_to_check

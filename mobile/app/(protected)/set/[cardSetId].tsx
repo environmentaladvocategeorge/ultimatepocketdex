@@ -78,18 +78,31 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   cardRarity: {
-    color: "#2c579e",
+    color: "#3161b0",
     fontSize: 8,
-    fontWeight: "500",
+    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 4,
+  },
+  cardBottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  cardNumber: {
+    color: "#aaa",
+    fontSize: 10,
+    fontWeight: "500",
+    flex: 1,
+    textAlign: "left",
   },
   cardPrice: {
     color: colors.white,
     fontSize: 12,
     fontWeight: "600",
-    alignSelf: "flex-end",
+    textAlign: "right",
+    flex: 1,
   },
   emptyState: {
     flex: 1,
@@ -196,15 +209,18 @@ export default function CardSet() {
           )}
         </View>
 
-        <Text style={styles.cardPrice}>
-          {item.latest_price?.price !== undefined &&
-          item.latest_price?.price !== null
-            ? `$${Number(item.latest_price.price).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}`
-            : "$0.00"}
-        </Text>
+        <View style={styles.cardBottomRow}>
+          <Text style={styles.cardNumber}>{item.card_number}</Text>
+          <Text style={styles.cardPrice}>
+            {item.latest_price?.price !== undefined &&
+            item.latest_price?.price !== null
+              ? `$${Number(item.latest_price.price).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              : "$0.00"}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );

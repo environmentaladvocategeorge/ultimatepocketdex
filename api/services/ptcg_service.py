@@ -15,6 +15,15 @@ import time
 
 logger = get_logger(__name__)
 
+NAME_MAP_EXCEPTIONS = {
+    "Crown Zenith Galarian Gallery": "Crown Zenith: Galarian Gallery", 
+    "151": "Scarlet & Violet: 151", 
+    "Shining Fates Shiny Vault": "Shining Fates: Shiny Vault",
+    "Astral Radiance Trainer Gallery": "Astral Radiance: Trainer Gallery",
+    "Silver Tempest Trainer Gallery": "Silver Tempest: Trainer Gallery", 
+    "Lost Origin Trainer Gallery": "Lost Origin: Trainer Gallery",
+}
+
 class PTCGService:
     def __init__(self):
         self.PTCG_BASE_URL: str = "https://api.pokemontcg.io/v2"
@@ -110,7 +119,7 @@ class PTCGService:
             card_set = CardSet(
                 provider_name='ptcg.io',
                 provider_identifier=ptcg_set.id,
-                set_name=ptcg_set.name,
+                set_name=NAME_MAP_EXCEPTIONS.get(ptcg_set.name, ptcg_set.name).replace("Black Star ", ""),
                 series_id=series.series_id,
                 set_card_count=ptcg_set.total,
                 set_logo_url=str(ptcg_set.images.logo) if ptcg_set.images and ptcg_set.images.logo else None,
@@ -140,13 +149,29 @@ class PTCGService:
                     ptcg_card.cardmarket.prices if ptcg_card.cardmarket else None
                 )
 
+                card_number = ptcg_card.number
+                printed_total = ptcg_card.set.printedTotal
+                set_name = ptcg_card.set.name
+                if set_name == "Crown Zenith Galarian Gallery" and printed_total and card_number:
+                    card_number = f"{card_number}/GG{printed_total}"
+                elif "Trainer Gallery" in set_name and printed_total and card_number:
+                    card_number = f"{card_number}/TG{printed_total}"
+                elif (
+                    printed_total
+                    and isinstance(card_number, str)
+                    and card_number.isdigit()
+                    and "Black Star" not in set_name
+                ):
+                    pad_length = len(str(printed_total))
+                    card_number = f"{int(card_number):0{pad_length}d}/{printed_total}"
+
                 card = Card(
                     provider_name='ptcg.io',
                     provider_identifier=ptcg_card.id,
                     card_name=ptcg_card.name,
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
-                    card_number=ptcg_card.number,
+                    card_number=card_number,
                     card_image_url=str(ptcg_card.images.large) if ptcg_card.images and ptcg_card.images.large else None,
                     series_id=series_id,
                     card_set_id=card_set_id
