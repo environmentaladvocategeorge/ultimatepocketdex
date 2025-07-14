@@ -117,7 +117,6 @@ def synchronize_card_sets():
                 else:
                     session.add(card)
                     session.flush()
-                    price_history.card_id = card.card_id
                     session.add(price_history)
                     session.flush()
                     card.latest_price_id = price_history.price_id
