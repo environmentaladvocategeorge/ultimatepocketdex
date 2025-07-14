@@ -125,6 +125,7 @@ class PTCGService:
                     card_name=ptcg_card.name,
                     card_rarity=ptcg_card.rarity,
                     types=ptcg_card.types or [],
+                    card_number=ptcg_card.number,
                     card_price=self.calculate_accurate_card_price(
                         (tp := ptcg_card.tcgplayer and ptcg_card.tcgplayer.prices) and (
                             tp.get("normal") or

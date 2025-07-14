@@ -123,6 +123,7 @@ class PTCGCard(BaseModel):
 
     id: str
     name: str
+    number: str = None
     supertype: Optional[str] = None
     subtypes: Optional[List[str]] = None
     level: Optional[str] = None
@@ -135,7 +136,6 @@ class PTCGCard(BaseModel):
     resistances: Optional[List[WeaknessOrResistance]] = None
     retreatCost: Optional[List[str]] = None
     convertedRetreatCost: Optional[int] = None
-    number: Optional[str] = None
     artist: Optional[str] = None
     rarity: Optional[str] = None
     flavorText: Optional[str] = None

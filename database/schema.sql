@@ -39,6 +39,7 @@ CREATE TABLE "Card" (
     series_id UUID NOT NULL REFERENCES "CardSeries"(series_id) ON DELETE CASCADE,
     card_set_id UUID NOT NULL REFERENCES "CardSet"(card_set_id) ON DELETE CASCADE,
     card_name VARCHAR(255) NOT NULL,
+    card_number VARCHAR(50) NOT NULL,
     card_rarity VARCHAR(100),
     types VARCHAR(50)[] DEFAULT '{}',
     card_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
