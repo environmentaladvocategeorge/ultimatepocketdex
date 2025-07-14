@@ -1,9 +1,11 @@
-from fastapi import APIRouter
+from operator import or_
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
 from repository.postgresql_database import PostgresDatabase
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
+from alchemy_models.card_series import CardSeries
 from utils.logger import get_logger
 from collections import defaultdict
 
@@ -19,19 +21,23 @@ db = PostgresDatabase(
 
 def create_card_set_controller():
     @router.get("/card-set")
-    async def get_all_sets():
+    async def get_all_sets(searchTerm: str = Query(None)):
         try:
             session = db.get_session()
             logger.info("Fetching all Pokémon TCG sets from the database...")
-            sets = (
-                session.query(CardSet)
-                .options(joinedload(CardSet.series))
-                .order_by(CardSet.set_release_date.desc())
-                .all()
-            )
-            
+            query = session.query(CardSet).join(CardSet.series).options(joinedload(CardSet.series)).order_by(CardSet.set_release_date.desc())
+
+            if searchTerm:
+                search_term_ilike = f"%{searchTerm}%"
+                query = query.filter(
+                    or_(
+                        CardSet.set_name.ilike(search_term_ilike),
+                        CardSeries.series_name.ilike(search_term_ilike)
+                    )
+                )
+
             grouped_sets = defaultdict(list)
-            for card_set in sets:
+            for card_set in query.all():
                 series_id = card_set.series_id
                 series_name = card_set.series.series_name if card_set.series else "Unknown Series"
                 grouped_sets[series_id].append(card_set.to_dict())
