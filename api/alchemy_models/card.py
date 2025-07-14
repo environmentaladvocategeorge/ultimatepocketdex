@@ -87,9 +87,6 @@ class Card(Base):
         if hasattr(self, 'latest_price') and self.latest_price:
             data['latest_price'] = self.latest_price.to_dict()
 
-        if hasattr(self, 'price_history') and self.price_history:
-            data['price_history'] = [price.to_dict() for price in self.price_history]
-
         return data
 
     def to_json(self):

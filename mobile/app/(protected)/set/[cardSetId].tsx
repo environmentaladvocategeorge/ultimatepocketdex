@@ -78,9 +78,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   cardRarity: {
-    color: "#FFD700",
+    color: "#2c579e",
     fontSize: 8,
-    fontWeight: "300",
+    fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -151,13 +151,10 @@ export default function CardSet() {
 
         const setData = await response.json();
 
-        console.log(setData.cards);
-
-        // Sort cards by price (highest first)
         if (setData.cards) {
           setData.cards.sort((a, b) => {
-            const priceA = parseFloat(a.card_price || 0);
-            const priceB = parseFloat(b.card_price || 0);
+            const priceA = parseFloat(a.latest_price?.price ?? 0);
+            const priceB = parseFloat(b.latest_price?.price ?? 0);
             return priceB - priceA;
           });
         }
@@ -200,7 +197,13 @@ export default function CardSet() {
         </View>
 
         <Text style={styles.cardPrice}>
-          ${parseFloat(item.card_price || 0).toFixed(2)}
+          {item.latest_price?.price !== undefined &&
+          item.latest_price?.price !== null
+            ? `$${Number(item.latest_price.price).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`
+            : "$0.00"}
         </Text>
       </View>
     </TouchableOpacity>
