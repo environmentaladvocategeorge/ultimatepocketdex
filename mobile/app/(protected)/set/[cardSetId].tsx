@@ -133,8 +133,8 @@ export default function CardSet() {
           <Image
             source={{ uri: set.set_logo_url }}
             style={{
-              width: 64,
-              height: 64,
+              width: 36,
+              height: 36,
               marginRight: 10,
               resizeMode: "contain",
             }}

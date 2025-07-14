@@ -22,6 +22,8 @@ NAME_MAP_EXCEPTIONS = {
     "Astral Radiance Trainer Gallery": "Astral Radiance: Trainer Gallery",
     "Silver Tempest Trainer Gallery": "Silver Tempest: Trainer Gallery", 
     "Lost Origin Trainer Gallery": "Lost Origin: Trainer Gallery",
+    "Brilliant Stars Trainer Gallery": "Brilliant Stars: Trainer Gallery",
+    "Hidden Fates Shiny Vault": "Hidden Fates: Shiny Vault",
 }
 
 class PTCGService:
@@ -154,7 +156,7 @@ class PTCGService:
                 set_name = ptcg_card.set.name
                 if set_name == "Crown Zenith Galarian Gallery":
                     card_number = f"{card_number}/GG{printed_total}"
-                elif set_name == "Shining Fates Shiny Vault":
+                elif set_name == "Shiny Vault" in set_name:
                     card_number = f"{card_number}/SV{printed_total}"
                 elif "Trainer Gallery" in set_name:
                     card_number = f"{card_number}/TG{printed_total}"
