@@ -152,9 +152,11 @@ class PTCGService:
                 card_number = ptcg_card.number
                 printed_total = ptcg_card.set.printedTotal
                 set_name = ptcg_card.set.name
-                if set_name == "Crown Zenith Galarian Gallery" and printed_total and card_number:
+                if set_name == "Crown Zenith Galarian Gallery":
                     card_number = f"{card_number}/GG{printed_total}"
-                elif "Trainer Gallery" in set_name and printed_total and card_number:
+                elif set_name == "Shining Fates Shiny Vault":
+                    card_number = f"{card_number}/SV{printed_total}"
+                elif "Trainer Gallery" in set_name:
                     card_number = f"{card_number}/TG{printed_total}"
                 elif (
                     printed_total
