@@ -23,24 +23,78 @@ const sortOptions = [
   {
     name: "Price Ascending",
     icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
+    sort: "price_asc",
   },
   {
     name: "Price Descending",
     icon: (
       <FontAwesome5 name="sort-amount-up-alt" size={12} color={colors.white} />
     ),
+    sort: "price_desc",
   },
   {
     name: "A-Z",
     icon: <FontAwesome5 name="sort-alpha-up" size={12} color={colors.white} />,
+    sort: "name_asc",
   },
   {
     name: "Z-A",
     icon: (
       <FontAwesome5 name="sort-alpha-up-alt" size={12} color={colors.white} />
     ),
+    sort: "name_desc",
   },
 ];
+
+const CardImage = ({
+  uri,
+  style,
+  placeholderStyle,
+  placeholderTextStyle,
+}: any) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const handleLoadStart = () => {
+    setIsLoading(true);
+    setHasError(false);
+  };
+
+  const handleLoadEnd = () => {
+    setIsLoading(false);
+  };
+
+  const handleError = () => {
+    setIsLoading(false);
+    setHasError(true);
+  };
+
+  if (!uri || hasError) {
+    return (
+      <View style={placeholderStyle}>
+        <Text style={placeholderTextStyle}>No Image</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={style}>
+      <Image
+        source={{ uri }}
+        style={StyleSheet.absoluteFillObject}
+        onLoadStart={handleLoadStart}
+        onLoadEnd={handleLoadEnd}
+        onError={handleError}
+        resizeMode="contain"
+      />
+      {isLoading && (
+        <View style={[StyleSheet.absoluteFillObject, styles.imageLoader]}>
+          <ActivityIndicator size="small" color="#4d7cc9" />
+        </View>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -114,6 +168,12 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 10,
     fontWeight: "500",
+  },
+  imageLoader: {
+    backgroundColor: "#2a2a2a",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 6,
   },
   cardInfo: {
     flex: 1,
@@ -220,16 +280,12 @@ export default function ExploreScreen() {
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
       <View style={styles.cardImageContainer}>
-        {item.card_image_url ? (
-          <Image
-            source={{ uri: item.card_image_url }}
-            style={styles.cardImage}
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>No Image</Text>
-          </View>
-        )}
+        <CardImage
+          uri={item.card_image_url}
+          style={styles.cardImage}
+          placeholderStyle={styles.placeholderImage}
+          placeholderTextStyle={styles.placeholderText}
+        />
       </View>
 
       <View style={styles.cardInfo}>
@@ -304,6 +360,7 @@ export default function ExploreScreen() {
             contentContainerStyle={styles.cardGrid}
             showsVerticalScrollIndicator={false}
             onEndReached={fetchCards}
+            onEndReachedThreshold={0.2}
             ListFooterComponent={
               loading ? (
                 <View style={{ paddingVertical: 16 }}>
