@@ -19,6 +19,10 @@ class PokemonType(BaseModel):
     slot: int
     type: PokemonTypeDetail
 
+class PokemonSpecies(BaseModel):
+    name: str
+    url: HttpUrl
+
 class PokemonSprites(BaseModel):
     front_default: Optional[str]
 
@@ -27,3 +31,4 @@ class PokemonDetailResponse(BaseModel):
     name: str
     types: List[PokemonType]
     sprites: PokemonSprites
+    species: PokemonSpecies

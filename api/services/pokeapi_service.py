@@ -68,7 +68,7 @@ class PokeAPIService:
         region = self._get_region_by_generation(gen)
         pokemon = Pokemon(
             national_dex_id=national_dex_id,
-            name=data.name,
+            name=data.species.name,
             generation=gen,
             region=region,
             types=self._extract_type_names(data.types),
