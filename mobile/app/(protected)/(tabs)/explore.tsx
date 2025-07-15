@@ -22,16 +22,16 @@ type SortOption = {
 
 const sortOptions = [
   {
-    name: "Price Ascending",
-    icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
-    sort: "price_asc",
-  },
-  {
     name: "Price Descending",
     icon: (
       <FontAwesome5 name="sort-amount-up-alt" size={12} color={colors.white} />
     ),
     sort: "price_desc",
+  },
+  {
+    name: "Price Ascending",
+    icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
+    sort: "price_asc",
   },
   {
     name: "A-Z",
@@ -249,7 +249,7 @@ export default function ExploreScreen() {
       setLoading(true);
       const token = await getToken();
       const response = await fetch(
-        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}&sortBy=${sortOption.sort}`,
+        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}&sortBy=${sortOption.sort}`,
         {
           method: "GET",
           headers: {
@@ -346,6 +346,29 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.pillText}
                 >{`Sort By ${sortOption.name}`}</Text>
+                <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.pill}
+              activeOpacity={0.7}
+              onPress={() => {
+                openSortSheet();
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.pillText}>{`Filter By Pokémon`}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.pill}
+              activeOpacity={0.7}
+              onPress={() => {
+                openSortSheet();
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.pillText}>{`Filter by Set/Series`}</Text>
                 <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
               </View>
             </TouchableOpacity>

@@ -6,6 +6,7 @@ from alchemy_models.card_set import CardSet
 from alchemy_models.card import Card
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
+from services.pokeapi_service import PokeAPIService
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -17,6 +18,7 @@ db = PostgresDatabase(
     password="Apple123Watch"
 )
 ptcg_service = PTCGService()
+poke_api_service = PokeAPIService()
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
@@ -32,6 +34,8 @@ def lambda_handler(event, context):
     try:
         if event_type == "synchronize_card_sets":
             synchronize_card_sets()
+        if event_type == "synchronize_pokemon":
+            synchronize_pokemon()
         else:
             logger.warning(f"Unknown event_type: {event_type}")
             return {
@@ -50,11 +54,26 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Internal server error"})
         }
 
-def synchronize_card_sets():
-    logger.info("Starting card sets synchronization")
-    session = db.get_session()
+def synchronize_pokemon():
+    logger.info("Starting pokemon synchronization")
 
     try:
+        session = db.get_session()
+        pokemons = poke_api_service.get_all_pokemons()
+        logger.info(pokemons)
+    except Exception as e:
+        logger.error(f"Error during card sets sync: {str(e)}", exc_info=True)
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def synchronize_card_sets():
+    logger.info("Starting card sets synchronization")
+
+    try:
+        session = db.get_session()
         ptcg_sets = ptcg_service.get_sets()
         all_mapped_card_sets = ptcg_service.map_ptcg_sets_to_card_sets(ptcg_sets, session)
 

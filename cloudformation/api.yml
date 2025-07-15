@@ -93,6 +93,11 @@ Resources:
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"event_type": "synchronize_card_sets"}'
+        SynchronizePokemonMonthly:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 9 1 * ? *)"
+            Input: '{"event_type": "synchronize_pokemon"}'
 
 Outputs:
   ApiUrl:
