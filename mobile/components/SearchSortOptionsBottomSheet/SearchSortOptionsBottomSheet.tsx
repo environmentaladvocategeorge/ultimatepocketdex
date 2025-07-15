@@ -1,14 +1,10 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Text } from "@/components";
+import Text from "../Text/Text";
 import { colors } from "@/constants/theme";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
-
-type SortOption = {
-  name: string;
-  icon: React.ReactNode;
-};
+import { SortOption } from "@/constants/sortAndFilter";
 
 interface SearchSortOptionsBottomSheetProps {
   sortOptions: SortOption[];

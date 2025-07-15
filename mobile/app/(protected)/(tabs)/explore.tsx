@@ -15,41 +15,11 @@ import {
 } from "@/components";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
-import { FontAwesome5 } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-
-type SortOption = {
-  name: string;
-  icon: React.ReactNode;
-  sort: string;
-};
-
-const sortOptions = [
-  {
-    name: "Price Descending",
-    icon: (
-      <FontAwesome5 name="sort-amount-up-alt" size={12} color={colors.white} />
-    ),
-    sort: "price_desc",
-  },
-  {
-    name: "Price Ascending",
-    icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
-    sort: "price_asc",
-  },
-  {
-    name: "A-Z",
-    icon: <FontAwesome5 name="sort-alpha-up" size={12} color={colors.white} />,
-    sort: "name_asc",
-  },
-  {
-    name: "Z-A",
-    icon: (
-      <FontAwesome5 name="sort-alpha-up-alt" size={12} color={colors.white} />
-    ),
-    sort: "name_desc",
-  },
-];
+import { LinearGradient } from "expo-linear-gradient";
+import { getGradientColors } from "@/utils/getGradientColors";
+import { SortOption, sortOptions } from "@/constants/sortAndFilter";
+import { Ionicons } from "@expo/vector-icons";
 
 const CardImage = ({
   uri,
@@ -226,27 +196,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const pokemonTypeColors = [
-  { type: "normal", color: "#A8A77A" },
-  { type: "fire", color: "#EE8130" },
-  { type: "water", color: "#6390F0" },
-  { type: "electric", color: "#F7D02C" },
-  { type: "grass", color: "#7AC74C" },
-  { type: "ice", color: "#96D9D6" },
-  { type: "fighting", color: "#C22E28" },
-  { type: "poison", color: "#A33EA1" },
-  { type: "ground", color: "#E2BF65" },
-  { type: "flying", color: "#A98FF3" },
-  { type: "psychic", color: "#F95587" },
-  { type: "bug", color: "#A6B91A" },
-  { type: "rock", color: "#B6A136" },
-  { type: "ghost", color: "#735797" },
-  { type: "dragon", color: "#6F35FC" },
-  { type: "dark", color: "#705746" },
-  { type: "steel", color: "#B7B7CE" },
-  { type: "fairy", color: "#D685AD" },
-];
-
 export default function ExploreScreen() {
   const { getToken } = useAuthentication();
   const [cards, setCards] = useState<any[]>([]);
@@ -255,7 +204,7 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
 
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
-  const [pokemonFilter, selectedPokemonFilter] = useState<any>(null);
+  const [pokemonFilter, setPokemonFilter] = useState<any>(null);
 
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
@@ -274,45 +223,74 @@ export default function ExploreScreen() {
   };
 
   const handlePokemonFilterSelect = (option: any) => {
-    selectedPokemonFilter(option);
+    setPokemonFilter(option);
     pokemonFilterSheetRef.current?.dismiss();
   };
 
-  const fetchCards = useCallback(async () => {
-    if (loading || !hasNext) return;
-
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const response = await fetch(
-        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}&sortBy=${sortOption.sort}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-
-      const { cards: newCards, pagination } = await response.json();
-      setCards((prev) => [...prev, ...newCards]);
-      setHasNext(pagination?.hasNext ?? false);
-      setPage((prev) => prev + 1);
-    } catch (error) {
-      console.error("Failed to fetch cards:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken, page, hasNext, loading, sortOption]);
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    fetchCards();
-  }, []);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    fetchCards(true);
+  }, [sortOption, pokemonFilter]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchCards(false);
+    setRefreshing(false);
+  };
+
+  const fetchCards = useCallback(
+    async (reset: boolean = false) => {
+      if (loading || !hasNext) return;
+
+      try {
+        if (reset) {
+          setIsResetting(true);
+          setPage(1);
+          setHasNext(true);
+          setCards([]);
+        }
+        setLoading(true);
+
+        const token = await getToken();
+        const response = await fetch(
+          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${
+            reset ? 1 : page
+          }&sortBy=${sortOption.sort}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        const { cards: newCards, pagination } = await response.json();
+        if (reset) {
+          setCards(newCards);
+        } else {
+          setCards((prev) => [...prev, ...newCards]);
+        }
+        setHasNext(pagination?.hasNext ?? false);
+        setPage((prev) => (reset ? 2 : prev + 1));
+      } catch (error) {
+        console.error("Failed to fetch cards:", error);
+      } finally {
+        setLoading(false);
+        setIsResetting(false);
+      }
+    },
+    [getToken, page, hasNext, loading, sortOption]
+  );
 
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
@@ -356,6 +334,17 @@ export default function ExploreScreen() {
     </TouchableOpacity>
   );
 
+  const isFetchingMoreRef = useRef(false);
+
+  const fetchMoreCards = useCallback(() => {
+    if (isFetchingMoreRef.current) return;
+
+    isFetchingMoreRef.current = true;
+    fetchCards(false).finally(() => {
+      isFetchingMoreRef.current = false;
+    });
+  }, [fetchCards]);
+
   return (
     <>
       <SearchSortOptionsBottomSheet
@@ -391,33 +380,71 @@ export default function ExploreScreen() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.pill}
               activeOpacity={0.7}
               onPress={() => {
-                openPokemonFilterSheet();
+                if (pokemonFilter) {
+                  setPokemonFilter(null);
+                } else {
+                  openPokemonFilterSheet();
+                }
               }}
+              style={{ marginRight: 12 }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.pillText}>
-                  {pokemonFilter ? pokemonFilter.name : `Filter By Pokemon`}
-                </Text>
-              </View>
+              {pokemonFilter ? (
+                <LinearGradient
+                  colors={getGradientColors(pokemonFilter.types)}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.pill, { borderWidth: 0, paddingRight: 8 }]}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={[styles.pillText, { marginRight: 6 }]}>
+                      {pokemonFilter.name}
+                    </Text>
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={12}
+                      style={{ marginTop: 1 }}
+                      color="#fff"
+                    />
+                  </View>
+                </LinearGradient>
+              ) : (
+                <View style={styles.pill}>
+                  <Text style={styles.pillText}>Filter By Pokemon</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </View>
 
-        {cards && (
+        {isResetting ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator size="large" color="#4d7cc9" />
+          </View>
+        ) : (
           <FlatList
+            ref={flatListRef}
             data={cards}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
             renderItem={renderCard}
             keyExtractor={(item) => item.card_id}
             numColumns={2}
             contentContainerStyle={styles.cardGrid}
             showsVerticalScrollIndicator={false}
-            onEndReached={fetchCards}
+            onEndReached={fetchMoreCards}
             onEndReachedThreshold={0.2}
             ListFooterComponent={
-              loading ? (
+              !refreshing && loading ? (
                 <View style={{ paddingVertical: 16 }}>
                   <ActivityIndicator size="small" color="#4d7cc9" />
                 </View>

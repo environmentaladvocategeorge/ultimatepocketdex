@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   SectionListRenderItemInfo,
 } from "react-native";
 import Text from "../Text/Text";
+import SearchInput from "../SearchInput/SearchInput";
 import { colors } from "@/constants/theme";
 import {
   BottomSheetBackdrop,
@@ -14,20 +15,7 @@ import {
   BottomSheetSectionList,
 } from "@gorhom/bottom-sheet";
 import { useAuthentication } from "@/context/AuthenticationContext";
-
-export type Pokemon = {
-  pokemon_id: string;
-  national_dex_id: number;
-  name: string;
-  generation: number;
-  region: string;
-  types: string[];
-  sprite_url: string | null;
-  provider_id: string;
-  provider_name: string;
-  create_ts: string | null;
-  updated_ts: string | null;
-};
+import { Pokemon } from "@/types/api";
 
 interface PokemonFilterOptionsBottomSheetProps {
   selectedPokemon: Pokemon | null;
@@ -100,44 +88,19 @@ const styles = StyleSheet.create({
   },
 });
 
-const formatPokemonName = (rawName: string): string => {
-  const exceptions: Record<string, string> = {
-    "ho-oh": "Ho-Oh",
-    "porygon-z": "Porygon-Z",
-    "type-null": "Type: Null",
-    "jangmo-o": "Jangmo-o",
-    "hakamo-o": "Hakamo-o",
-    "kommo-o": "Kommo-o",
-    "mr.mime": "Mr. Mime",
-    "mime.jr": "Mime Jr.",
-    "mr.rime": "Mr. Rime",
-    "tapu.koko": "Tapu Koko",
-    sirfetchd: "Sirfetch’d",
-    flabebe: "Flabébé",
-  };
-
-  const key = rawName.toLowerCase();
-
-  if (exceptions[key]) {
-    return exceptions[key];
-  }
-
-  return rawName
-    .replace(/[-.]/g, " ")
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-};
-
 const PokemonFilterOptionsBottomSheet = React.forwardRef<
   BottomSheetModal,
   PokemonFilterOptionsBottomSheetProps
 >(({ selectedPokemon, onSelect }, ref) => {
   const { getToken } = useAuthentication();
   const [loading, setLoading] = useState(false);
+  const [allSections, setAllSections] = useState<
+    { title: string; data: Pokemon[] }[]
+  >([]);
   const [sections, setSections] = useState<
     { title: string; data: Pokemon[][] }[]
   >([]);
+  const [searchInputValue, setSearchInputValue] = useState("");
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -180,12 +143,19 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
       }
 
       const rawSections = await response.json();
-      const formatted = rawSections.map((section: any) => ({
+      const formattedAllSections = rawSections.map((section: any) => ({
         title: section.region,
+        data: section.data,
+      }));
+
+      setAllSections(formattedAllSections);
+
+      const formattedSections = formattedAllSections.map((section: any) => ({
+        title: section.title,
         data: groupIntoRows(section.data),
       }));
 
-      setSections(formatted);
+      setSections(formattedSections);
     } catch (error) {
       console.error("Failed to fetch pokemons:", error);
     } finally {
@@ -196,6 +166,43 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
   useEffect(() => {
     fetchPokemon();
   }, []);
+
+  useEffect(() => {
+    if (!searchInputValue.trim()) {
+      const formattedSections = allSections.map((section) => ({
+        title: section.title,
+        data: groupIntoRows(section.data),
+      }));
+      setSections(formattedSections);
+      return;
+    }
+
+    const lowerInput = searchInputValue.trim().toLowerCase();
+
+    const filteredSections = allSections
+      .map((section) => {
+        const filteredData = section.data.filter((pokemon) => {
+          const nameMatch = pokemon.name.toLowerCase().includes(lowerInput);
+          const regionMatch = pokemon.region.toLowerCase().includes(lowerInput);
+          const dexMatch = pokemon.national_dex_id
+            .toString()
+            .includes(lowerInput);
+          return nameMatch || regionMatch || dexMatch;
+        });
+        return {
+          title: section.title,
+          data: filteredData,
+        };
+      })
+      .filter((section) => section.data.length > 0);
+
+    const groupedFilteredSections = filteredSections.map((section) => ({
+      title: section.title,
+      data: groupIntoRows(section.data),
+    }));
+
+    setSections(groupedFilteredSections);
+  }, [searchInputValue, allSections]);
 
   const renderItem = ({ item }: SectionListRenderItemInfo<Pokemon[]>) => (
     <View style={styles.pokemonRow}>
@@ -212,13 +219,7 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
               resizeMode="contain"
             />
           )}
-          <Text style={styles.pokemonName}>
-            {pokemon.name
-              .replace(/-/g, " ")
-              .split(" ")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ")}
-          </Text>
+          <Text style={styles.pokemonName}>{pokemon.name}</Text>
           <Text style={styles.pokemonDexNumber}>
             #{pokemon.national_dex_id}
           </Text>
@@ -248,6 +249,13 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
       handleIndicatorStyle={{ backgroundColor: colors.white }}
     >
       <View style={styles.container}>
+        <SearchInput
+          value={searchInputValue}
+          onChangeText={(value) => {
+            setSearchInputValue(value);
+          }}
+          placeholder="Search Pokémon..."
+        />
         <BottomSheetSectionList
           sections={sections}
           keyExtractor={(_, index) => index.toString()}
