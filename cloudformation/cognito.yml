@@ -14,7 +14,7 @@ Parameters:
     Description: "Base identifier for resource naming."
 
 Resources:
-  CognitoUserPoolV3:
+  CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub "${ResourceBaseIdentifier}-userpool-${Environment}"
@@ -34,11 +34,11 @@ Resources:
           RequireUppercase: true
       MfaConfiguration: "OFF"
 
-  CognitoUserPoolClientV3:
+  CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub "${ResourceBaseIdentifier}-client-v3-${Environment}"
-      UserPoolId: !Ref CognitoUserPoolV3
+      ClientName: !Sub "${ResourceBaseIdentifier}-client-${Environment}"
+      UserPoolId: !Ref CognitoUserPool
       GenerateSecret: false
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
@@ -47,13 +47,13 @@ Resources:
 
 Outputs:
   CognitoUserPoolId:
-    Value: !Ref CognitoUserPoolV3
-    Description: "Cognito User Pool ID (using 32)"
+    Value: !Ref CognitoUserPool
+    Description: "Cognito User Pool ID"
     Export:
       Name: !Sub "${AWS::StackName}-CognitoUserPoolId"
 
   CognitoUserPoolClientId:
-    Value: !Ref CognitoUserPoolClientV3
-    Description: "Cognito User Pool Client ID (using V3)"
+    Value: !Ref CognitoUserPoolClient
+    Description: "Cognito User Pool Client ID"
     Export:
       Name: !Sub "${AWS::StackName}-CognitoUserPoolClientId"

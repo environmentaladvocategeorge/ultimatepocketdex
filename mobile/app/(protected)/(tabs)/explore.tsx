@@ -17,6 +17,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 type SortOption = {
   name: string;
   icon: React.ReactNode;
+  sort: "price_asc" | "price_desc" | "name_asc" | "name_desc";
 };
 
 const sortOptions = [
@@ -248,7 +249,7 @@ export default function ExploreScreen() {
       setLoading(true);
       const token = await getToken();
       const response = await fetch(
-        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}`,
+        `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}&sortBy=${sortOption.sort}`,
         {
           method: "GET",
           headers: {
@@ -271,7 +272,7 @@ export default function ExploreScreen() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, page, hasNext, loading]);
+  }, [getToken, page, hasNext, loading, sortOption]);
 
   useEffect(() => {
     fetchCards();
