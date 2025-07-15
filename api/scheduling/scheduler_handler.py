@@ -4,7 +4,6 @@ import logging
 import concurrent.futures
 from alchemy_models.card_set import CardSet
 from alchemy_models.card import Card
-from alchemy_models.pokemon import Pokemon
 from repository.postgresql_database import PostgresDatabase
 from services.ptcg_service import PTCGService
 from services.pokeapi_service import PokeAPIService
@@ -55,38 +54,25 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Internal server error"})
         }
 
-from sqlalchemy.dialects.postgresql import insert
-
 def synchronize_pokemon():
     logger.info("Starting pokemon synchronization")
 
-    session = None
     try:
         session = db.get_session()
         pokemons = poke_api_service.get_all_pokemons()
         logger.info(f"Fetched {len(pokemons)} pokemons")
-        
-        stmt = insert(Pokemon).values([p.__dict__ for p in pokemons])
 
-        update_cols = {c.name: c for c in stmt.excluded if c.name != "national_dex_id"}
-
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["national_dex_id"],
-            set_=update_cols
-        )
-
-        session.execute(stmt)
+        session.add_all(pokemons)
         session.commit()
-        logger.info("Pokemons synchronized successfully with upsert")
 
+        logger.info("Pokemons synchronized successfully")
     except Exception as e:
         logger.error(f"Error during pokemon sync: {str(e)}", exc_info=True)
-        if session:
-            session.rollback()
+        session.rollback()
         raise
     finally:
-        if session:
-            session.close()
+        session.close()
+
 
 def synchronize_card_sets():
     logger.info("Starting card sets synchronization")
