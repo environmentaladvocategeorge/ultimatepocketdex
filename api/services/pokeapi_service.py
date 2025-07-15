@@ -49,6 +49,29 @@ class PokeAPIService:
         }
         return generation_to_region.get(generation, "Unknown")
     
+    def _format_pokemon_name(self, raw_name: str) -> str:
+        exceptions = {
+            "ho-oh": "Ho-Oh",
+            "porygon-z": "Porygon-Z",
+            "type-null": "Type: Null",
+            "jangmo-o": "Jangmo-o",
+            "hakamo-o": "Hakamo-o",
+            "kommo-o": "Kommo-o",
+            "mr.mime": "Mr. Mime",
+            "mime.jr": "Mime Jr.",
+            "mr.rime": "Mr. Rime",
+            "tapu.koko": "Tapu Koko",
+            "sirfetchd": "Sirfetch’d",
+            "flabebe": "Flabébé",
+        }
+
+        key = raw_name.lower()
+        if key in exceptions:
+            return exceptions[key]
+
+        words = raw_name.replace("-", " ").replace(".", " ").split()
+        return " ".join(word.capitalize() for word in words)
+
     def _extract_type_names(self, types_array: List[PokemonType]) -> List[str]:
         sorted_types = sorted(types_array, key=lambda t: t.slot)
         return [t.type.name for t in sorted_types]
@@ -66,9 +89,10 @@ class PokeAPIService:
         national_dex_id = data.id
         gen = self._get_generation(national_dex_id)
         region = self._get_region_by_generation(gen)
+        name = self._format_pokemon_name(data.species.name)
         pokemon = Pokemon(
             national_dex_id=national_dex_id,
-            name=data.species.name,
+            name=name,
             generation=gen,
             region=region,
             types=self._extract_type_names(data.types),

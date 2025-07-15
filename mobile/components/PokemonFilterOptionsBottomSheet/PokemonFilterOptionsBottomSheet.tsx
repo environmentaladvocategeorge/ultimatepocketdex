@@ -2,14 +2,17 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  FlatList,
-  ActivityIndicator,
   Image,
   TouchableOpacity,
+  SectionListRenderItemInfo,
 } from "react-native";
-import { Text } from "@/components";
+import Text from "../Text/Text";
 import { colors } from "@/constants/theme";
-import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetSectionList,
+} from "@gorhom/bottom-sheet";
 import { useAuthentication } from "@/context/AuthenticationContext";
 
 export type Pokemon = {
@@ -28,7 +31,7 @@ export type Pokemon = {
 
 interface PokemonFilterOptionsBottomSheetProps {
   selectedPokemon: Pokemon | null;
-  onSelect: any;
+  onSelect: (pokemon: Pokemon) => void;
 }
 
 const styles = StyleSheet.create({
@@ -38,13 +41,7 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   container: {
-    padding: 8,
-  },
-  title: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 16,
+    padding: 16,
   },
   regionHeader: {
     color: colors.white,
@@ -53,16 +50,15 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
   },
-  pokemonGrid: {
+  pokemonRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
+    marginBottom: 8,
   },
   pokemonCard: {
     backgroundColor: colors.darkGrey,
     padding: 6,
     borderRadius: 12,
-    marginBottom: 8,
     width: "24%",
     alignItems: "center",
     justifyContent: "center",
@@ -82,7 +78,56 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
   },
+  shimmerSprite: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginBottom: 2,
+  },
+  shimmerName: {
+    height: 12,
+    borderRadius: 6,
+    marginBottom: 2,
+  },
+  shimmerDexNumber: {
+    height: 10,
+    borderRadius: 5,
+    width: 30,
+  },
+  shimmerRegionHeader: {
+    borderRadius: 8,
+    marginTop: 12,
+  },
 });
+
+const formatPokemonName = (rawName: string): string => {
+  const exceptions: Record<string, string> = {
+    "ho-oh": "Ho-Oh",
+    "porygon-z": "Porygon-Z",
+    "type-null": "Type: Null",
+    "jangmo-o": "Jangmo-o",
+    "hakamo-o": "Hakamo-o",
+    "kommo-o": "Kommo-o",
+    "mr.mime": "Mr. Mime",
+    "mime.jr": "Mime Jr.",
+    "mr.rime": "Mr. Rime",
+    "tapu.koko": "Tapu Koko",
+    sirfetchd: "Sirfetch’d",
+    flabebe: "Flabébé",
+  };
+
+  const key = rawName.toLowerCase();
+
+  if (exceptions[key]) {
+    return exceptions[key];
+  }
+
+  return rawName
+    .replace(/[-.]/g, " ")
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
 
 const PokemonFilterOptionsBottomSheet = React.forwardRef<
   BottomSheetModal,
@@ -90,7 +135,9 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
 >(({ selectedPokemon, onSelect }, ref) => {
   const { getToken } = useAuthentication();
   const [loading, setLoading] = useState(false);
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<
+    { title: string; data: Pokemon[][] }[]
+  >([]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -105,9 +152,16 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
     []
   );
 
+  const groupIntoRows = (pokemons: Pokemon[], rowSize = 4): Pokemon[][] => {
+    const rows: Pokemon[][] = [];
+    for (let i = 0; i < pokemons.length; i += rowSize) {
+      rows.push(pokemons.slice(i, i + rowSize));
+    }
+    return rows;
+  };
+
   const fetchPokemon = useCallback(async () => {
     if (loading) return;
-
     try {
       setLoading(true);
       const token = await getToken();
@@ -121,13 +175,17 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
           },
         }
       );
-
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
-      const formattedSections = await response.json();
-      setSections(formattedSections);
+      const rawSections = await response.json();
+      const formatted = rawSections.map((section: any) => ({
+        title: section.region,
+        data: groupIntoRows(section.data),
+      }));
+
+      setSections(formatted);
     } catch (error) {
       console.error("Failed to fetch pokemons:", error);
     } finally {
@@ -139,66 +197,66 @@ const PokemonFilterOptionsBottomSheet = React.forwardRef<
     fetchPokemon();
   }, []);
 
-  const renderRegion = ({
-    item,
-  }: {
-    item: { region: string; data: Pokemon[] };
-  }) => (
-    <View style={styles.container}>
-      <Text style={styles.regionHeader}>{item.region}</Text>
-      <View style={styles.pokemonGrid}>
-        {item.data.map((pokemon: Pokemon) => (
-          <TouchableOpacity
-            key={pokemon.pokemon_id}
-            style={styles.pokemonCard}
-            onPress={() => onSelect(pokemon)}
-          >
-            {pokemon.sprite_url && (
-              <Image
-                source={{ uri: pokemon.sprite_url }}
-                style={styles.pokemonSprite}
-                resizeMode="contain"
-              />
-            )}
-            <Text style={styles.pokemonName}>
-              {pokemon.name
-                .replace(/-/g, " ")
-                .split(" ")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ")}
-            </Text>
-            <Text
-              style={styles.pokemonDexNumber}
-            >{`#${pokemon.national_dex_id}`}</Text>
-          </TouchableOpacity>
+  const renderItem = ({ item }: SectionListRenderItemInfo<Pokemon[]>) => (
+    <View style={styles.pokemonRow}>
+      {item.map((pokemon) => (
+        <TouchableOpacity
+          key={pokemon.pokemon_id}
+          style={styles.pokemonCard}
+          onPress={() => onSelect(pokemon)}
+        >
+          {pokemon.sprite_url && (
+            <Image
+              source={{ uri: pokemon.sprite_url }}
+              style={styles.pokemonSprite}
+              resizeMode="contain"
+            />
+          )}
+          <Text style={styles.pokemonName}>
+            {pokemon.name
+              .replace(/-/g, " ")
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ")}
+          </Text>
+          <Text style={styles.pokemonDexNumber}>
+            #{pokemon.national_dex_id}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      {item.length < 4 &&
+        Array.from({ length: 4 - item.length }).map((_, i) => (
+          <View
+            key={`empty-${i}`}
+            style={[styles.pokemonCard, { opacity: 0 }]}
+          />
         ))}
-      </View>
     </View>
+  );
+
+  const renderSectionHeader = ({ section }: any) => (
+    <Text style={styles.regionHeader}>{section.title}</Text>
   );
 
   return (
     <BottomSheetModal
       ref={ref}
+      enableDynamicSizing={false}
       snapPoints={["80%"]}
       backgroundStyle={styles.sheetBackground}
-      enableDynamicSizing={false}
       backdropComponent={renderBackdrop}
       handleIndicatorStyle={{ backgroundColor: colors.white }}
     >
       <View style={styles.container}>
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.white} />
-        ) : (
-          <FlatList
-            data={sections}
-            keyExtractor={(item) => item.region}
-            renderItem={renderRegion}
-            contentContainerStyle={{
-              paddingBottom: 200,
-            }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+        <BottomSheetSectionList
+          sections={sections}
+          keyExtractor={(_, index) => index.toString()}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
+        />
       </View>
     </BottomSheetModal>
   );
