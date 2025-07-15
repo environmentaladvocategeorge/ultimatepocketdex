@@ -1,44 +1,92 @@
+from pydantic import ValidationError
 import requests
-from typing import List, Dict
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Union
+from alchemy_models.pokemon import Pokemon
+from response_models.pokeapi import PokemonDetailResponse, PokemonListResponseModel, PokemonType
+
 
 class PokeAPIService:
     def __init__(self):
         self.POKE_API_BASE_URL: str = "https://pokeapi.co/api/v2/"
 
-    def get_pokemon_details(self, name: str) -> Dict:
-        """
-        Fetch and return detailed info for a given Pokémon by name.
-        """
-        url = f"{self.POKE_API_BASE_URL}pokemon/{name}"
+    def _get_generation(self, dex_number: int) -> int:
+        if dex_number <= 0:
+            raise ValueError("Dex number must be a positive integer.")
+        
+        if 1 <= dex_number <= 151:
+            return 1
+        elif 152 <= dex_number <= 251:
+            return 2
+        elif 252 <= dex_number <= 386:
+            return 3
+        elif 387 <= dex_number <= 493:
+            return 4
+        elif 494 <= dex_number <= 649:
+            return 5
+        elif 650 <= dex_number <= 721:
+            return 6
+        elif 722 <= dex_number <= 809:
+            return 7
+        elif 810 <= dex_number <= 905:
+            return 8
+        elif 906 <= dex_number <= 1025:
+            return 9
+        else:
+            raise ValueError("Dex number is out of known range.")
+        
+    def _get_region_by_generation(self, generation: int) -> str:
+        generation_to_region = {
+            1: "Kanto",
+            2: "Johto",
+            3: "Hoenn",
+            4: "Sinnoh",
+            5: "Unova",
+            6: "Kalos",
+            7: "Alola",
+            8: "Galar",
+            9: "Paldea",
+        }
+        return generation_to_region.get(generation, "Unknown")
+    
+    def _extract_type_names(self, types_array: List[PokemonType]) -> List[str]:
+        sorted_types = sorted(types_array, key=lambda t: t.slot)
+        return [t.type.name for t in sorted_types]
+
+    def get_pokemon_details(self, name_or_id: Union[str, int]) -> Pokemon:
+        url = f"{self.POKE_API_BASE_URL}pokemon/{name_or_id}/"
         response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        
+        try:
+            data = PokemonDetailResponse(**response.json())
+        except ValidationError as e:
+            raise RuntimeError(f"Failed to parse Pokémon detail response: {e}")
+        
+        national_dex_id = data.id
+        gen = self._get_generation(national_dex_id)
+        region = self._get_region_by_generation(gen)
+        pokemon = Pokemon(
+            national_dex_id=national_dex_id,
+            name=data.name,
+            generation=gen,
+            region=region,
+            types=self._extract_type_names(data.types),
+            sprite_url=data.sprites.front_default,
+            provider_id=str(national_dex_id),
+            provider_name="pokeapi"
+        )
+        return pokemon
 
-    def get_all_pokemons(self, limit: int = 10000, offset: int = 0, batchSize: int = 30 ) -> List[Dict]:
-        """
-        Fetch all Pokémon summaries and return their detailed info using concurrent requests (max 30 at a time).
-        """
+    def get_all_pokemons(self, limit: int = 100, offset: int = 0) -> List[Pokemon]:
         url = f"{self.POKE_API_BASE_URL}pokemon?limit={limit}&offset={offset}"
         response = requests.get(url)
         response.raise_for_status()
-        data = response.json()
-        pokemon_names = [pokemon["name"] for pokemon in data["results"]]
+
+        parsed = PokemonListResponseModel(**response.json())
 
         all_details = []
-
-        for i in range(0, len(pokemon_names), batchSize):
-            chunk = pokemon_names[i:i+batchSize]
-            print(f"Fetching batch {i//batchSize + 1} of {len(pokemon_names) // batchSize + 1}...")
-
-            with ThreadPoolExecutor(max_workers=batchSize) as executor:
-                futures = {executor.submit(self.get_pokemon_details, name): name for name in chunk}
-                for future in as_completed(futures):
-                    name = futures[future]
-                    try:
-                        details = future.result()
-                        all_details.append(details)
-                    except Exception as e:
-                        print(f"Failed to fetch {name}: {e}")
+        for pokemon in parsed.results:
+            details = self.get_pokemon_details(pokemon.name)
+            all_details.append(details)
 
         return all_details

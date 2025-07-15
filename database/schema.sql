@@ -63,3 +63,18 @@ FOREIGN KEY (latest_price_id)
 REFERENCES "CardPriceHistory"(price_id)
 ON DELETE SET NULL
 DEFERRABLE INITIALLY DEFERRED;
+
+CREATE TABLE "Pokemon" (
+    pokemon_id UUID PRIMARY KEY,
+    national_dex_id INTEGER NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    generation INTEGER NOT NULL,
+    region VARCHAR(50) NOT NULL,
+    types VARCHAR(50)[] NOT NULL DEFAULT '{}',
+    sprite_url VARCHAR(1024),
+    provider_id VARCHAR(255) NOT NULL,
+    provider_name VARCHAR(100) NOT NULL,
+    create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (provider_name, provider_id)
+);
