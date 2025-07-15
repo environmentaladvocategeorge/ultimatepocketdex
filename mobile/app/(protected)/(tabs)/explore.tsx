@@ -8,7 +8,11 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { Text, SearchSortOptionsBottomSheet } from "@/components";
+import {
+  Text,
+  SearchSortOptionsBottomSheet,
+  PokemonFilterOptionsBottomSheet,
+} from "@/components";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
 import { FontAwesome5 } from "@expo/vector-icons";
@@ -17,7 +21,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 type SortOption = {
   name: string;
   icon: React.ReactNode;
-  sort: "price_asc" | "price_desc" | "name_asc" | "name_desc";
+  sort: string;
 };
 
 const sortOptions = [
@@ -230,8 +234,10 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
 
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
+  const [pokemonFilter, selectedPokemonFilter] = useState<any>(null);
 
   const sortSheetRef = useRef<BottomSheetModal>(null);
+  const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
 
   const openSortSheet = () => {
     sortSheetRef.current?.present();
@@ -240,6 +246,15 @@ export default function ExploreScreen() {
   const handleSortSelect = (option: SortOption) => {
     setSortOption(option);
     sortSheetRef.current?.dismiss();
+  };
+
+  const openPokemonFilterSheet = () => {
+    pokemonFilterSheetRef.current?.present();
+  };
+
+  const handlePokemonFilterSelect = (option: any) => {
+    selectedPokemonFilter(option);
+    pokemonFilterSheetRef.current?.dismiss();
   };
 
   const fetchCards = useCallback(async () => {
@@ -328,6 +343,11 @@ export default function ExploreScreen() {
         selectedOption={sortOption}
         onSelect={handleSortSelect}
       />
+      <PokemonFilterOptionsBottomSheet
+        ref={pokemonFilterSheetRef}
+        selectedPokemon={pokemonFilter}
+        onSelect={handlePokemonFilterSelect}
+      />
       <View style={styles.container}>
         <View style={styles.pillContainer}>
           <ScrollView
@@ -353,23 +373,13 @@ export default function ExploreScreen() {
               style={styles.pill}
               activeOpacity={0.7}
               onPress={() => {
-                openSortSheet();
+                openPokemonFilterSheet();
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.pillText}>{`Filter By Pokémon`}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.pill}
-              activeOpacity={0.7}
-              onPress={() => {
-                openSortSheet();
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.pillText}>{`Filter by Set/Series`}</Text>
-                <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
+                <Text style={styles.pillText}>
+                  {pokemonFilter ? pokemonFilter.name : `Filter By Pokemon`}
+                </Text>
               </View>
             </TouchableOpacity>
           </ScrollView>

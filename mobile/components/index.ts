@@ -3,6 +3,7 @@ import Button from "./Button/Button";
 import Input from "./Input/Input";
 import KeyboardAvoidingWrapper from "./KeyboardAvoidingWrapper/KeyboardAvoidingWrapper";
 import SearchSortOptionsBottomSheet from "./SearchSortOptionsBottomSheet/SearchSortOptionsBottomSheet";
+import PokemonFilterOptionsBottomSheet from "./PokemonFilterOptionsBottomSheet/PokemonFilterOptionsBottomSheet";
 import Text from "./Text/Text";
 
 export {
@@ -11,5 +12,6 @@ export {
   Input,
   KeyboardAvoidingWrapper,
   SearchSortOptionsBottomSheet,
+  PokemonFilterOptionsBottomSheet,
   Text,
 };

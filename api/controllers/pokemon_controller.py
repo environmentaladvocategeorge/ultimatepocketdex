@@ -33,15 +33,18 @@ def create_pokemon_controller():
 
             for p in all_pokemons:
                 if p.region not in region_map:
-                    region_map[p.region] = {
-                        "generation": p.generation,
-                        "count": 0,
-                        "pokemons": []
-                    }
-                region_map[p.region]["count"] += 1
-                region_map[p.region]["pokemons"].append(p.to_dict())
+                    region_map[p.region] = []
+                region_map[p.region].append(p.to_dict())
+                
+            formatted_sections = [
+                {
+                    "region": region,
+                    "data": pokemons
+                }
+                for region, pokemons in region_map.items()
+            ]
 
-            return JSONResponse(content=region_map)
+            return JSONResponse(content=formatted_sections)
 
         except Exception as e:
             logger.error(f"Error fetching Pokémon by region: {str(e)}", exc_info=True)

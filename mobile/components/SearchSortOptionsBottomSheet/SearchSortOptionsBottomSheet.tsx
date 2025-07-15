@@ -13,7 +13,7 @@ type SortOption = {
 interface SearchSortOptionsBottomSheetProps {
   sortOptions: SortOption[];
   selectedOption: SortOption;
-  onSelect: (option: SortOption) => void;
+  onSelect: any;
 }
 
 const styles = StyleSheet.create({
