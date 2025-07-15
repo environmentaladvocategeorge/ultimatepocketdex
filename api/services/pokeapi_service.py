@@ -78,7 +78,7 @@ class PokeAPIService:
         )
         return pokemon
 
-    def get_all_pokemons(self, limit: int = 10000, offset: int = 0) -> List[Pokemon]:
+    def get_all_pokemons(self, limit: int = 1025, offset: int = 0) -> List[Pokemon]:
         url = f"{self.POKE_API_BASE_URL}pokemon?limit={limit}&offset={offset}"
         response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
