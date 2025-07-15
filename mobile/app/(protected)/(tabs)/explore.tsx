@@ -257,10 +257,18 @@ export default function ExploreScreen() {
         setLoading(true);
 
         const token = await getToken();
+        const queryParams = new URLSearchParams({
+          pageSize: "50",
+          page: reset ? "1" : page.toString(),
+          sortBy: sortOption.sort,
+        });
+
+        if (pokemonFilter?.name) {
+          queryParams.append("pokemonName", pokemonFilter.name);
+        }
+
         const response = await fetch(
-          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${
-            reset ? 1 : page
-          }&sortBy=${sortOption.sort}`,
+          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
           {
             method: "GET",
             headers: {
