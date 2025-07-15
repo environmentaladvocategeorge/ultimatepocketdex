@@ -2,6 +2,8 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useCallback, useState } from "react";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   AuthenticationProvider,
   useAuthentication,
@@ -74,8 +76,12 @@ const InitialLayout = () => {
 
 export default function RootLayout() {
   return (
-    <AuthenticationProvider>
-      <InitialLayout />
-    </AuthenticationProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <AuthenticationProvider>
+          <InitialLayout />
+        </AuthenticationProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }

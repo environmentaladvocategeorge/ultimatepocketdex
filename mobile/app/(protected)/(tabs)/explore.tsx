@@ -3,19 +3,71 @@ import {
   View,
   StyleSheet,
   FlatList,
-  Text,
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
+import { Text } from "@/components";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
+import { FontAwesome5 } from "@expo/vector-icons";
+
+type SortOption = {
+  name: string;
+  icon: React.ReactNode;
+};
+
+const sortOptions = [
+  {
+    name: "Price Ascending",
+    icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
+  },
+  {
+    name: "Price Descending",
+    icon: (
+      <FontAwesome5 name="sort-amount-up-alt" size={12} color={colors.white} />
+    ),
+  },
+  {
+    name: "A-Z",
+    icon: <FontAwesome5 name="sort-alpha-up" size={12} color={colors.white} />,
+  },
+  {
+    name: "Z-A",
+    icon: (
+      <FontAwesome5 name="sort-alpha-up-alt" size={12} color={colors.white} />
+    ),
+  },
+];
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.black,
     padding: 8,
+  },
+  pillContainer: {
+    height: 26,
+    marginBottom: 8,
+  },
+  pillScroll: {
+    paddingHorizontal: 8,
+  },
+  pill: {
+    borderWidth: 1,
+    borderColor: "#4d7cc9",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  pillText: {
+    color: colors.white,
+    fontWeight: "400",
+    fontSize: 10,
   },
   cardGrid: {
     paddingHorizontal: 4,
@@ -110,15 +162,14 @@ export default function ExploreScreen() {
   const [hasNext, setHasNext] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
+
   const fetchCards = useCallback(async () => {
     if (loading || !hasNext) return;
 
     try {
       setLoading(true);
       const token = await getToken();
-      console.log(
-        `Fetching: https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}`
-      );
       const response = await fetch(
         `https://sckyk8xgrg.execute-api.us-east-1.amazonaws.com/dev/search?pageSize=50&page=${page}`,
         {
@@ -149,7 +200,7 @@ export default function ExploreScreen() {
     fetchCards();
   }, []);
 
-  const renderCard = ({ item }) => (
+  const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
       <View style={styles.cardImageContainer}>
         {item.card_image_url ? (
@@ -197,6 +248,23 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.pillContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillScroll}
+        >
+          <TouchableOpacity style={styles.pill} activeOpacity={0.7}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={styles.pillText}
+              >{`Sort By ${sortOption.name}`}</Text>
+              <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       {cards && (
         <FlatList
           data={cards}
