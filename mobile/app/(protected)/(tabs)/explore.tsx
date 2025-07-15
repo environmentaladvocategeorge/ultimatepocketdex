@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { Text } from "@/components";
+import { Text, SearchSortOptionsBottomSheet } from "@/components";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type SortOption = {
   name: string;
@@ -46,6 +47,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.black,
     padding: 8,
+  },
+  scrollContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
   },
   pillContainer: {
     height: 26,
@@ -164,6 +170,17 @@ export default function ExploreScreen() {
 
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
 
+  const sortSheetRef = useRef<BottomSheetModal>(null);
+
+  const openSortSheet = () => {
+    sortSheetRef.current?.present();
+  };
+
+  const handleSortSelect = (option: SortOption) => {
+    setSortOption(option);
+    sortSheetRef.current?.dismiss();
+  };
+
   const fetchCards = useCallback(async () => {
     if (loading || !hasNext) return;
 
@@ -247,42 +264,56 @@ export default function ExploreScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.pillContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillScroll}
-        >
-          <TouchableOpacity style={styles.pill} activeOpacity={0.7}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={styles.pillText}
-              >{`Sort By ${sortOption.name}`}</Text>
-              <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
-            </View>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
-      {cards && (
-        <FlatList
-          data={cards}
-          renderItem={renderCard}
-          keyExtractor={(item) => item.card_id}
-          numColumns={2}
-          contentContainerStyle={styles.cardGrid}
-          showsVerticalScrollIndicator={false}
-          onEndReached={fetchCards}
-          ListFooterComponent={
-            loading ? (
-              <View style={{ paddingVertical: 16 }}>
-                <ActivityIndicator size="small" color="#4d7cc9" />
+    <>
+      <SearchSortOptionsBottomSheet
+        ref={sortSheetRef}
+        sortOptions={sortOptions}
+        selectedOption={sortOption}
+        onSelect={handleSortSelect}
+      />
+      <View style={styles.container}>
+        <View style={styles.pillContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillScroll}
+          >
+            <TouchableOpacity
+              style={styles.pill}
+              activeOpacity={0.7}
+              onPress={() => {
+                openSortSheet();
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={styles.pillText}
+                >{`Sort By ${sortOption.name}`}</Text>
+                <View style={{ marginLeft: 6 }}>{sortOption.icon}</View>
               </View>
-            ) : null
-          }
-        />
-      )}
-    </View>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
+        {cards && (
+          <FlatList
+            data={cards}
+            renderItem={renderCard}
+            keyExtractor={(item) => item.card_id}
+            numColumns={2}
+            contentContainerStyle={styles.cardGrid}
+            showsVerticalScrollIndicator={false}
+            onEndReached={fetchCards}
+            ListFooterComponent={
+              loading ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator size="small" color="#4d7cc9" />
+                </View>
+              ) : null
+            }
+          />
+        )}
+      </View>
+    </>
   );
 }

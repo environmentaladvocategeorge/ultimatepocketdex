@@ -17,7 +17,7 @@ Resources:
   CognitoUserPoolV3:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub "${ResourceBaseIdentifier}-userpool-v3-${Environment}"
+      UserPoolName: !Sub "${ResourceBaseIdentifier}-userpool-${Environment}"
       AliasAttributes:
         - email
         - preferred_username
@@ -25,11 +25,6 @@ Resources:
         - email
       UsernameConfiguration:
         CaseSensitive: false
-      Schema:
-        - Name: ageRange
-          AttributeDataType: String
-          Mutable: true
-          Required: false
       Policies:
         PasswordPolicy:
           MinimumLength: 8

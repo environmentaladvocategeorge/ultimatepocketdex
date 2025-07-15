@@ -44,18 +44,14 @@ export const signInUser = (emailAddress: string, password: string) => {
 export const signUpUser = (
   username: string,
   emailAddress: string,
-  password: string,
-  ageRange: string,
-  gender: string
+  password: string
 ) => {
-  if (!username || !emailAddress || !password || !ageRange || !gender) {
+  if (!username || !emailAddress || !password) {
     return;
   }
 
   const attributeList = [
     new CognitoUserAttribute({ Name: "email", Value: emailAddress }),
-    new CognitoUserAttribute({ Name: "custom:ageRange", Value: ageRange }),
-    new CognitoUserAttribute({ Name: "gender", Value: gender }),
   ];
 
   return new Promise((resolve, reject) => {
