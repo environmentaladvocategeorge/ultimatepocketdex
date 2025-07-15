@@ -18,7 +18,6 @@ class PokemonTypeDetail(BaseModel):
 class PokemonType(BaseModel):
     slot: int
     type: PokemonTypeDetail
-    url: HttpUrl
 
 class PokemonSprites(BaseModel):
     front_default: Optional[str]
