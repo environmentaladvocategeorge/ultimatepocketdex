@@ -8,6 +8,7 @@ from response_models.pokeapi import PokemonDetailResponse, PokemonListResponseMo
 class PokeAPIService:
     def __init__(self):
         self.POKE_API_BASE_URL: str = "https://pokeapi.co/api/v2/"
+        self.REQUEST_TIMEOUT = 30
 
     def _get_generation(self, dex_number: int) -> int:
         if dex_number <= 0:
@@ -54,7 +55,7 @@ class PokeAPIService:
 
     def get_pokemon_details(self, name_or_id: Union[str, int]) -> Pokemon:
         url = f"{self.POKE_API_BASE_URL}pokemon/{name_or_id}/"
-        response = requests.get(url)
+        response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
         
         try:
@@ -79,7 +80,7 @@ class PokeAPIService:
 
     def get_all_pokemons(self, limit: int = 100, offset: int = 0) -> List[Pokemon]:
         url = f"{self.POKE_API_BASE_URL}pokemon?limit={limit}&offset={offset}"
-        response = requests.get(url)
+        response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
 
         parsed = PokemonListResponseModel(**response.json())
