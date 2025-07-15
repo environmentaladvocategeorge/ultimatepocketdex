@@ -53,6 +53,14 @@ Resources:
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
+        GetPokemon:
+          Type: Api
+          Properties:
+            Path: /pokemon
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   ApiGateway:
     Type: AWS::Serverless::Api

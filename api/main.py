@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
+from controllers.pokemon_controller import create_pokemon_controller
 from controllers.user_controller import create_user_controller
 from controllers.search_controller import create_search_controller
 from utils.logger import get_logger
@@ -28,5 +29,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.include_router(create_user_controller())
 app.include_router(create_search_controller())
+app.include_router(create_pokemon_controller())
 
 handler = Mangum(app)
