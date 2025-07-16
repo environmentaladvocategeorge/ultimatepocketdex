@@ -77,11 +77,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     padding: 8,
   },
-  scrollContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
   pillContainer: {
     height: 26,
     marginBottom: 8,
@@ -202,103 +197,61 @@ export default function ExploreScreen() {
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
   const [loading, setLoading] = useState(false);
-
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
   const [pokemonFilter, setPokemonFilter] = useState<any>(null);
-
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
-
-  const openSortSheet = () => {
-    sortSheetRef.current?.present();
-  };
-
-  const handleSortSelect = (option: SortOption) => {
-    setSortOption(option);
-    sortSheetRef.current?.dismiss();
-  };
-
-  const openPokemonFilterSheet = () => {
-    pokemonFilterSheetRef.current?.present();
-  };
-
-  const handlePokemonFilterSelect = (option: any) => {
-    setPokemonFilter(option);
-    pokemonFilterSheetRef.current?.dismiss();
-  };
-
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-    fetchCards(true);
+    fetchCards();
   }, [sortOption, pokemonFilter]);
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchCards(false);
-    setRefreshing(false);
-  };
-
-  const fetchCards = useCallback(
-    async (reset: boolean = false) => {
-      if (loading || !hasNext) return;
-
-      try {
-        if (reset) {
-          setIsResetting(true);
-          setPage(1);
-          setHasNext(true);
-          setCards([]);
-        }
-        setLoading(true);
-
-        const token = await getToken();
-        const queryParams = new URLSearchParams({
-          pageSize: "50",
-          page: reset ? "1" : page.toString(),
-          sortBy: sortOption.sort,
-        });
-
-        if (pokemonFilter?.name) {
-          queryParams.append("pokemonName", pokemonFilter.name);
-        }
-
-        const response = await fetch(
-          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-
-        const { cards: newCards, pagination } = await response.json();
-        if (reset) {
-          setCards(newCards);
-        } else {
-          setCards((prev) => [...prev, ...newCards]);
-        }
-        setHasNext(pagination?.hasNext ?? false);
-        setPage((prev) => (reset ? 2 : prev + 1));
-      } catch (error) {
-        console.error("Failed to fetch cards:", error);
-      } finally {
-        setLoading(false);
-        setIsResetting(false);
+  const fetchCards = useCallback(async () => {
+    if (loading || !hasNext) return;
+    try {
+      setLoading(true);
+      const token = await getToken();
+      const queryParams = new URLSearchParams({
+        pageSize: "50",
+        page: page.toString(),
+        sortBy: sortOption.sort,
+      });
+      if (pokemonFilter?.name) {
+        queryParams.append("pokemonName", pokemonFilter.name);
       }
-    },
-    [getToken, page, hasNext, loading, sortOption]
-  );
+      const response = await fetch(
+        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+      const { cards: newCards, pagination } = await response.json();
+      setCards((prev) => [...prev, ...newCards]);
+      setHasNext(pagination?.hasNext ?? false);
+      setPage((prev) => prev + 1);
+    } catch (error) {
+      console.error("Failed to fetch cards:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken, page, hasNext, loading, sortOption]);
+
+  const isFetchingMoreRef = useRef(false);
+  const fetchMoreCards = useCallback(() => {
+    if (isFetchingMoreRef.current) return;
+    isFetchingMoreRef.current = true;
+    fetchCards().finally(() => {
+      isFetchingMoreRef.current = false;
+    });
+  }, [fetchCards]);
 
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
@@ -310,22 +263,18 @@ export default function ExploreScreen() {
           placeholderTextStyle={styles.placeholderText}
         />
       </View>
-
       <View style={styles.cardInfo}>
         <View style={styles.cardTopInfo}>
           <Text style={styles.cardName} numberOfLines={2}>
             {item.card_name}
           </Text>
-
           {item.card_rarity && (
-            <Text style={styles.cardSet}>{`${item.card_set_name}`}</Text>
+            <Text style={styles.cardSet}>{item.card_set_name}</Text>
           )}
-
           {item.card_rarity && (
-            <Text style={styles.cardRarity}>{`${item.card_rarity}`}</Text>
+            <Text style={styles.cardRarity}>{item.card_rarity}</Text>
           )}
         </View>
-
         <View style={styles.cardBottomRow}>
           <Text style={styles.cardNumber}>{item.card_number}</Text>
           <Text style={styles.cardPrice}>
@@ -342,29 +291,21 @@ export default function ExploreScreen() {
     </TouchableOpacity>
   );
 
-  const isFetchingMoreRef = useRef(false);
-
-  const fetchMoreCards = useCallback(() => {
-    if (isFetchingMoreRef.current) return;
-
-    isFetchingMoreRef.current = true;
-    fetchCards(false).finally(() => {
-      isFetchingMoreRef.current = false;
-    });
-  }, [fetchCards]);
-
   return (
     <>
       <SearchSortOptionsBottomSheet
         ref={sortSheetRef}
         sortOptions={sortOptions}
         selectedOption={sortOption}
-        onSelect={handleSortSelect}
+        onSelect={setSortOption}
       />
       <PokemonFilterOptionsBottomSheet
         ref={pokemonFilterSheetRef}
         selectedPokemon={pokemonFilter}
-        onSelect={handlePokemonFilterSelect}
+        onSelect={(option) => {
+          pokemonFilterSheetRef.current?.close();
+          setPokemonFilter(option);
+        }}
       />
       <View style={styles.container}>
         <View style={styles.pillContainer}>
@@ -376,9 +317,7 @@ export default function ExploreScreen() {
             <TouchableOpacity
               style={styles.pill}
               activeOpacity={0.7}
-              onPress={() => {
-                openSortSheet();
-              }}
+              onPress={() => sortSheetRef.current?.present()}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text
@@ -389,13 +328,11 @@ export default function ExploreScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => {
-                if (pokemonFilter) {
-                  setPokemonFilter(null);
-                } else {
-                  openPokemonFilterSheet();
-                }
-              }}
+              onPress={() =>
+                pokemonFilter
+                  ? setPokemonFilter(null)
+                  : pokemonFilterSheetRef.current?.present()
+              }
               style={{ marginRight: 12 }}
             >
               {pokemonFilter ? (
@@ -431,35 +368,24 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </ScrollView>
         </View>
-
-        {isResetting ? (
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <ActivityIndicator size="large" color="#4d7cc9" />
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={cards}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            renderItem={renderCard}
-            keyExtractor={(item) => item.card_id}
-            numColumns={2}
-            contentContainerStyle={styles.cardGrid}
-            showsVerticalScrollIndicator={false}
-            onEndReached={fetchMoreCards}
-            onEndReachedThreshold={0.2}
-            ListFooterComponent={
-              !refreshing && loading ? (
-                <View style={{ paddingVertical: 16 }}>
-                  <ActivityIndicator size="small" color="#4d7cc9" />
-                </View>
-              ) : null
-            }
-          />
-        )}
+        <FlatList
+          ref={flatListRef}
+          data={cards}
+          renderItem={renderCard}
+          keyExtractor={(item) => item.card_id}
+          numColumns={2}
+          contentContainerStyle={styles.cardGrid}
+          showsVerticalScrollIndicator={false}
+          onEndReached={fetchMoreCards}
+          onEndReachedThreshold={0.2}
+          ListFooterComponent={
+            loading ? (
+              <View style={{ paddingVertical: 16 }}>
+                <ActivityIndicator size="small" color="#4d7cc9" />
+              </View>
+            ) : null
+          }
+        />
       </View>
     </>
   );
