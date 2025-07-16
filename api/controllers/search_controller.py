@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import desc, asc
@@ -34,7 +35,7 @@ class SearchParams(BaseModel):
     page: int = 1
     pageSize: int = 20
     sortBy: SortBy = SortBy.PRICE_DESC
-    pokemonName: str | None = None
+    pokemonName: Optional[str] = None
 
 def create_search_controller():
     @router.get("/search")
