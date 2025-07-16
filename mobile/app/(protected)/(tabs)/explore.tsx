@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
-  FlatList,
   Image,
   TouchableOpacity,
   ActivityIndicator,
@@ -20,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { getGradientColors } from "@/utils/getGradientColors";
 import { SortOption, sortOptions } from "@/constants/sortAndFilter";
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 
 const CardImage = ({
   uri,
@@ -106,12 +106,11 @@ const styles = StyleSheet.create({
   cardItem: {
     backgroundColor: "#1a1a1a",
     borderRadius: 8,
-    margin: 4,
     padding: 8,
-    flex: 1,
-    maxWidth: "48%",
     borderWidth: 1,
     borderColor: "#333",
+    margin: 4,
+    flex: 1,
   },
   cardImageContainer: {
     width: "100%",
@@ -201,57 +200,53 @@ export default function ExploreScreen() {
   const [pokemonFilter, setPokemonFilter] = useState<any>(null);
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const flashListRef = useRef<FlashList<any>>(null);
 
   useEffect(() => {
-    fetchCards();
+    fetchCards(true);
   }, [sortOption, pokemonFilter]);
 
-  const fetchCards = useCallback(async () => {
-    if (loading || !hasNext) return;
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const queryParams = new URLSearchParams({
-        pageSize: "50",
-        page: page.toString(),
-        sortBy: sortOption.sort,
-      });
-      if (pokemonFilter?.name) {
-        queryParams.append("pokemonName", pokemonFilter.name);
-      }
-      const response = await fetch(
-        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+  const fetchCards = useCallback(
+    async (reset = false) => {
+      if (loading || (!hasNext && !reset)) return;
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const queryParams = new URLSearchParams({
+          pageSize: "50",
+          page: reset ? "1" : page.toString(),
+          sortBy: sortOption.sort,
+        });
+        if (pokemonFilter?.name) {
+          queryParams.append("pokemonName", pokemonFilter.name);
         }
-      );
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const response = await fetch(
+          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+        const { cards: newCards, pagination } = await response.json();
+        setCards((prev) => (reset ? newCards : [...prev, ...newCards]));
+        setHasNext(pagination?.hasNext ?? false);
+        setPage((prev) => (reset ? 2 : prev + 1));
+        if (reset)
+          flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      } catch (error) {
+        console.error("Failed to fetch cards:", error);
+      } finally {
+        setLoading(false);
       }
-      const { cards: newCards, pagination } = await response.json();
-      setCards((prev) => [...prev, ...newCards]);
-      setHasNext(pagination?.hasNext ?? false);
-      setPage((prev) => prev + 1);
-    } catch (error) {
-      console.error("Failed to fetch cards:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken, page, hasNext, loading, sortOption]);
-
-  const isFetchingMoreRef = useRef(false);
-  const fetchMoreCards = useCallback(() => {
-    if (isFetchingMoreRef.current) return;
-    isFetchingMoreRef.current = true;
-    fetchCards().finally(() => {
-      isFetchingMoreRef.current = false;
-    });
-  }, [fetchCards]);
+    },
+    [getToken, page, hasNext, loading, sortOption, pokemonFilter]
+  );
 
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
@@ -368,15 +363,16 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </ScrollView>
         </View>
-        <FlatList
-          ref={flatListRef}
+        <FlashList
+          ref={flashListRef}
           data={cards}
           renderItem={renderCard}
           keyExtractor={(item) => item.card_id}
+          estimatedItemSize={250}
           numColumns={2}
           contentContainerStyle={styles.cardGrid}
           showsVerticalScrollIndicator={false}
-          onEndReached={fetchMoreCards}
+          onEndReached={() => fetchCards()}
           onEndReachedThreshold={0.2}
           ListFooterComponent={
             loading ? (
