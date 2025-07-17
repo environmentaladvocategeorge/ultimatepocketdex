@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
+from controllers.card_set_controller import create_card_set_controller
 from controllers.pokemon_controller import create_pokemon_controller
 from controllers.user_controller import create_user_controller
 from controllers.search_controller import create_search_controller
@@ -28,6 +29,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
 
 app.include_router(create_user_controller())
+app.include_router(create_card_set_controller())
 app.include_router(create_search_controller())
 app.include_router(create_pokemon_controller())
 

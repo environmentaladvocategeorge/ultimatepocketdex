@@ -61,6 +61,14 @@ Resources:
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
+        GetCardSet:
+          Type: Api
+          Properties:
+            Path: /card-set
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   ApiGateway:
     Type: AWS::Serverless::Api
