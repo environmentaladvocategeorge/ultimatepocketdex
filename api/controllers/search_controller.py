@@ -43,11 +43,12 @@ def create_search_controller():
         page: int = Query(1, ge=1, description="Page number, starting from 1"),
         pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
         sortBy: SortBy = Query(SortBy.PRICE_DESC, description="Sort criteria"),
-        pokemonName: str = Query(None, description="Name of the Pokémon to search for (partial match)")
+        pokemonName: Optional[str] = Query(None, description="Name of the Pokémon to search for (partial match)"),
+        setName: Optional[str] = Query(None, description="Name of the card set to filter by (partial match)")
     ):
         session = db.get_session()
         try:
-            logger.info(f"Fetching cards - Page: {page}, Page Size: {pageSize}, Sort: {sortBy}, Pokémon: {pokemonName}")
+            logger.info(f"Fetching cards - Page: {page}, Page Size: {pageSize}, Sort: {sortBy}, Pokémon: {pokemonName}, Set: {setName}")
 
             offset = (page - 1) * pageSize
 
@@ -56,10 +57,15 @@ def create_search_controller():
                 joinedload(Card.latest_price)
             ).join(
                 latest_price_alias, Card.latest_price_id == latest_price_alias.price_id, isouter=True
+            ).join(
+                CardSet, Card.card_set_id == CardSet.card_set_id
             )
 
             if pokemonName:
                 query = query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
+
+            if setName:
+                query = query.filter(CardSet.set_name.ilike(f"%{setName}%"))
 
             if sortBy == SortBy.PRICE_ASC:
                 query = query.order_by(asc(latest_price_alias.price))
