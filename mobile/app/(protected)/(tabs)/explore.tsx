@@ -20,6 +20,8 @@ import { getGradientColors } from "@/utils/getGradientColors";
 import { SortOption, sortOptions } from "@/constants/sortAndFilter";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
+import CardSetFilterOptionsBottomSheet from "@/components/CardSetFilterOptionsBottomSheet.tsx/CardSetFilterOptionsBottomSheet";
+import { CardSet, Pokemon } from "@/types/api";
 
 const styles = StyleSheet.create({
   container: {
@@ -147,9 +149,11 @@ export default function ExploreScreen() {
   const [hasNext, setHasNext] = useState(true);
   const [loading, setLoading] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
-  const [pokemonFilter, setPokemonFilter] = useState<any>(null);
+  const [pokemonFilter, setPokemonFilter] = useState<Pokemon | null>(null);
+  const [cardSetFilter, setCardSetFilter] = useState<CardSet | null>(null);
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
+  const cardSetFilterSheetRef = useRef<BottomSheetModal>(null);
   const flashListRef = useRef<FlashList<any>>(null);
 
   useEffect(() => {
@@ -256,6 +260,14 @@ export default function ExploreScreen() {
           setPokemonFilter(option);
         }}
       />
+      <CardSetFilterOptionsBottomSheet
+        ref={cardSetFilterSheetRef}
+        selectedCardSet={cardSetFilter}
+        onSelect={(option) => {
+          cardSetFilterSheetRef.current?.close();
+          setCardSetFilter(option);
+        }}
+      />
       <View style={styles.container}>
         <View style={styles.pillContainer}>
           <ScrollView
@@ -278,14 +290,34 @@ export default function ExploreScreen() {
             <TouchableOpacity
               style={styles.pill}
               activeOpacity={0.7}
-              onPress={() => sortSheetRef.current?.present()}
+              onPress={() => {
+                if (cardSetFilter) {
+                  setCardSetFilter(null);
+                } else {
+                  cardSetFilterSheetRef.current?.present();
+                }
+              }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.pillText}>{`Filter By Set`}</Text>
-                <View style={{ marginLeft: 6 }}>
-                  <Ionicons size={12} name="albums" color="white" />
+              {cardSetFilter ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={styles.pillText}>{cardSetFilter.set_name}</Text>
+                  <View style={{ marginLeft: 6 }}>
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={12}
+                      style={{ marginTop: 0.5 }}
+                      color="#fff"
+                    />
+                  </View>
                 </View>
-              </View>
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={styles.pillText}>{`Filter By Set`}</Text>
+                  <View style={{ marginLeft: 6 }}>
+                    <Ionicons size={12} name="albums" color="white" />
+                  </View>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.7}

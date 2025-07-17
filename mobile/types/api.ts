@@ -21,9 +21,23 @@ export type Pokemon = {
   generation: number;
   region: string;
   types: string[];
-  sprite_url: string | null;
+  sprite_url: string;
   provider_id: string;
   provider_name: string;
-  create_ts: string | null;
-  updated_ts: string | null;
+  create_ts: string;
+  updated_ts: string;
 };
+
+export interface CardSet {
+  card_set_id: string;
+  set_name: string;
+  provider_name: string;
+  provider_identifier: string;
+  series_id: string;
+  series_name: string;
+  set_card_count: number;
+  set_release_date: string;
+  set_logo_url: string;
+  create_ts: string;
+  updated_ts: string;
+}

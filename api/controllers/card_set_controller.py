@@ -26,24 +26,36 @@ def create_card_set_controller():
             all_sets = (
                 session.query(CardSet)
                 .options(joinedload(CardSet.series))
-                .order_by(CardSet.series_id, CardSet.set_release_date)
+                .order_by(CardSet.set_release_date.desc())
                 .all()
             )
 
             series_map = {}
 
             for card_set in all_sets:
-                series_name = card_set.series.series_name if card_set.series else "Unknown Series"
-                if series_name not in series_map:
-                    series_map[series_name] = []
-                series_map[series_name].append(card_set.to_dict())
+                series_name = card_set.series.series_name if card_set.series else "Other"
+                series_entry = series_map.setdefault(series_name, {"sets": [], "latest_date": None})
+
+                series_entry["sets"].append(card_set.to_dict())
+
+                if card_set.set_release_date:
+                    if not series_entry["latest_date"] or card_set.set_release_date > series_entry["latest_date"]:
+                        series_entry["latest_date"] = card_set.set_release_date
+
+            sorted_series = sorted(
+                (name for name in series_map if name != "Other"),
+                key=lambda name: series_map[name]["latest_date"] or "",
+                reverse=True
+            )
+            if "Other" in series_map:
+                sorted_series.append("Other")
 
             formatted_sections = [
                 {
-                    "series": series_name,
-                    "data": sets
+                    "series": name,
+                    "data": series_map[name]["sets"]
                 }
-                for series_name, sets in series_map.items()
+                for name in sorted_series
             ]
 
             return JSONResponse(content=formatted_sections)
