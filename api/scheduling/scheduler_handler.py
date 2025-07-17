@@ -34,7 +34,7 @@ def lambda_handler(event, context):
     try:
         if event_type == "synchronize_card_sets":
             synchronize_card_sets()
-        if event_type == "synchronize_pokemon":
+        elif event_type == "synchronize_pokemon":
             synchronize_pokemon()
         else:
             logger.warning(f"Unknown event_type: {event_type}")
