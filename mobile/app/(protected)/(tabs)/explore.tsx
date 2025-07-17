@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   SearchSortOptionsBottomSheet,
   PokemonFilterOptionsBottomSheet,
 } from "@/components";
+import { Image as ExpoImage } from "expo-image";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -20,56 +20,6 @@ import { getGradientColors } from "@/utils/getGradientColors";
 import { SortOption, sortOptions } from "@/constants/sortAndFilter";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
-
-const CardImage = ({
-  uri,
-  style,
-  placeholderStyle,
-  placeholderTextStyle,
-}: any) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  const handleLoadStart = () => {
-    setIsLoading(true);
-    setHasError(false);
-  };
-
-  const handleLoadEnd = () => {
-    setIsLoading(false);
-  };
-
-  const handleError = () => {
-    setIsLoading(false);
-    setHasError(true);
-  };
-
-  if (!uri || hasError) {
-    return (
-      <View style={placeholderStyle}>
-        <Text style={placeholderTextStyle}>No Image</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={style}>
-      <Image
-        source={{ uri }}
-        style={StyleSheet.absoluteFillObject}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
-        onError={handleError}
-        resizeMode="contain"
-      />
-      {isLoading && (
-        <View style={[StyleSheet.absoluteFillObject, styles.imageLoader]}>
-          <ActivityIndicator size="small" color="#4d7cc9" />
-        </View>
-      )}
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -251,11 +201,12 @@ export default function ExploreScreen() {
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
       <View style={styles.cardImageContainer}>
-        <CardImage
-          uri={item.card_image_url}
+        <ExpoImage
+          source={{ uri: item.card_image_url }}
           style={styles.cardImage}
-          placeholderStyle={styles.placeholderImage}
-          placeholderTextStyle={styles.placeholderText}
+          contentFit="contain"
+          recyclingKey={item.card_id}
+          transition={100}
         />
       </View>
       <View style={styles.cardInfo}>
@@ -292,7 +243,10 @@ export default function ExploreScreen() {
         ref={sortSheetRef}
         sortOptions={sortOptions}
         selectedOption={sortOption}
-        onSelect={setSortOption}
+        onSelect={(option: any) => {
+          sortSheetRef.current?.close();
+          setSortOption(option);
+        }}
       />
       <PokemonFilterOptionsBottomSheet
         ref={pokemonFilterSheetRef}
