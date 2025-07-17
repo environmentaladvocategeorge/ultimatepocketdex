@@ -2,6 +2,8 @@ import json
 import logging
 
 import concurrent.futures
+
+from sqlalchemy import tuple_
 from alchemy_models.card_set import CardSet
 from alchemy_models.card import Card
 from repository.postgresql_database import PostgresDatabase
@@ -112,12 +114,10 @@ def synchronize_card_sets():
 
 def upsert_card_sets(card_sets, session):
     count = 0
-    # Build identifiers for filtering
     identifier_pairs = [
         (cs.provider_name, cs.provider_identifier) for cs in card_sets
     ]
 
-    # Fetch existing sets in one query
     existing_sets = session.query(CardSet).filter(
         tuple_(CardSet.provider_name, CardSet.provider_identifier).in_(identifier_pairs)
     ).all()
