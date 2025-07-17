@@ -9,14 +9,14 @@ export type SortOption = {
 
 export const sortOptions = [
   {
-    name: "Price Descending",
+    name: "Price High",
     icon: (
       <FontAwesome5 name="sort-amount-up-alt" size={12} color={colors.white} />
     ),
     sort: "price_desc",
   },
   {
-    name: "Price Ascending",
+    name: "Price Low",
     icon: <FontAwesome5 name="sort-amount-up" size={12} color={colors.white} />,
     sort: "price_asc",
   },

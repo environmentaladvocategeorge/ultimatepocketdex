@@ -276,13 +276,24 @@ export default function ExploreScreen() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity
+              style={styles.pill}
+              activeOpacity={0.7}
+              onPress={() => sortSheetRef.current?.present()}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.pillText}>{`Filter By Set`}</Text>
+                <View style={{ marginLeft: 6 }}>
+                  <Ionicons size={12} name="albums" color="white" />
+                </View>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
               activeOpacity={0.7}
               onPress={() =>
                 pokemonFilter
                   ? setPokemonFilter(null)
                   : pokemonFilterSheetRef.current?.present()
               }
-              style={{ marginRight: 12 }}
             >
               {pokemonFilter ? (
                 <LinearGradient
@@ -311,7 +322,12 @@ export default function ExploreScreen() {
                 </LinearGradient>
               ) : (
                 <View style={styles.pill}>
-                  <Text style={styles.pillText}>Filter By Pokemon</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={styles.pillText}>Filter By Pokémon</Text>
+                    <View style={{ marginLeft: 6 }}>
+                      <Ionicons size={12} name="sparkles" color="white" />
+                    </View>
+                  </View>
                 </View>
               )}
             </TouchableOpacity>

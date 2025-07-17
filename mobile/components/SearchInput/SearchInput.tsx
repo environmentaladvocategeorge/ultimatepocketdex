@@ -54,10 +54,8 @@ const SearchInput = ({
   onBlur,
   onSubmitEditing,
 }: SearchInputProps) => {
-  // Local state to store immediate input value
   const [inputValue, setInputValue] = useState(value);
 
-  // Update local state if parent value changes (important if cleared from outside)
   useEffect(() => {
     setInputValue(value);
   }, [value]);
@@ -67,7 +65,6 @@ const SearchInput = ({
       onChangeText(inputValue);
     }, 200);
 
-    // Cleanup if inputValue changes before timeout
     return () => clearTimeout(handler);
   }, [inputValue, onChangeText]);
 
