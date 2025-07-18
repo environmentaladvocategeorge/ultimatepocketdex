@@ -125,8 +125,6 @@ class CognitoService:
         
         user_name = payload.get("cognito:username")
         email_address = payload.get("email")
-        gender = payload.get("gender")
-        age_range = payload.get("custom:ageRange")
         
         logger.info(f"User information extracted: {user_id}, {user_name}, {email_address}, {age_range}")
 
@@ -134,6 +132,4 @@ class CognitoService:
             user_id=user_id,
             user_name=user_name,
             email_address=email_address,
-            gender=gender,
-            age_range=age_range
         )

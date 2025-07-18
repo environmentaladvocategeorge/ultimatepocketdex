@@ -163,8 +163,6 @@ export default function ProfileScreen() {
         userId: data.user_id,
         userName: data.user_name,
         emailAddress: data.email_address,
-        gender: data.gender,
-        ageRange: data.age_range,
         createTs: data.create_ts,
         updatedTs: data.updated_ts,
       };
