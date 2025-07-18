@@ -51,8 +51,6 @@ export default function ProtectedLayout() {
       <Tabs.Screen
         name="vault"
         options={{
-          headerTitle: "",
-          headerShown: false,
           tabBarLabel: "Vault",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons

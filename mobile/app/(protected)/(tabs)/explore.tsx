@@ -121,22 +121,34 @@ export default function ExploreScreen() {
   );
 
   const addCardToUser = async (cardId: string, quantity = 1) => {
-    const token = await getToken();
-    const response = await fetch(
-      `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          card_id: cardId,
-          quantity: quantity,
-        }),
+    try {
+      const token = await getToken();
+
+      const response = await fetch(
+        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            card_id: cardId,
+            quantity: quantity,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add card to user");
       }
-    );
-    console.log(await response.json());
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error in addCardToUser:", error);
+      throw error;
+    }
   };
 
   const renderCard = ({ item }: { item: CardType }) => (

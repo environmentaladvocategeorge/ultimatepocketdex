@@ -72,7 +72,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#4d7cc9",
     borderRadius: 11,
   },
   cardNumber: {
@@ -96,17 +98,42 @@ interface CardProps {
 }
 
 const Card = ({ card, onAdd }: CardProps) => {
-  const [adding, setAdding] = useState(false);
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
   const handleAdd = async () => {
-    if (!onAdd) return;
+    if (!onAdd || status === "loading") return;
     try {
-      setAdding(true);
+      setStatus("loading");
       await onAdd(card.card_id);
+      setStatus("success");
     } catch (error) {
       console.error("Error adding card:", error);
+      setStatus("error");
     } finally {
-      setAdding(false);
+      setTimeout(() => {
+        setStatus("idle");
+      }, 2000);
+    }
+  };
+
+  const renderIcon = () => {
+    switch (status) {
+      case "loading":
+        return (
+          <ActivityIndicator
+            size="small"
+            color="#fff"
+            style={{ transform: [{ scale: 0.6 }] }}
+          />
+        );
+      case "success":
+        return <Ionicons name="checkmark" size={15} color="#5cb85c" />;
+      case "error":
+        return <Ionicons name="close" size={18} color="#ff4d4d" />;
+      default:
+        return <Ionicons name="add" size={18} color="#fff" />;
     }
   };
 
@@ -138,17 +165,9 @@ const Card = ({ card, onAdd }: CardProps) => {
             <TouchableOpacity
               style={styles.addButtonInline}
               onPress={handleAdd}
-              disabled={adding}
+              disabled={status !== "idle"}
             >
-              {adding ? (
-                <ActivityIndicator
-                  size="small"
-                  color="#fff"
-                  style={{ transform: [{ scale: 0.6 }] }}
-                />
-              ) : (
-                <Ionicons name="add" size={18} color="#fff" />
-              )}
+              {renderIcon()}
             </TouchableOpacity>
           )}
           <Text style={styles.cardNumber}>{card.card_number}</Text>
