@@ -37,11 +37,27 @@ Resources:
                 - rds:*
               Resource: "*"
       Events:
-        GetUserProfile:
+        GetUser:
           Type: Api
           Properties:
-            Path: /user-profile
+            Path: /user
             Method: GET
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetUserCard:
+          Type: Api
+          Properties:
+            Path: /user/card
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AddCardToUser:
+          Type: Api
+          Properties:
+            Path: /user/card
+            Method: POST
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
@@ -118,4 +134,4 @@ Resources:
 Outputs:
   ApiUrl:
     Description: "URL of the API"
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/user-profile"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"

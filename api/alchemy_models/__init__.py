@@ -7,6 +7,7 @@ from .card import Card
 from .card_set import CardSet
 from .card_series import CardSeries
 from .user import User
+from .user_card import UserCard
 from .pokemon import Pokemon
 
-__all__ = ["Card", "CardSet", "CardSeries", "CardPriceHistory", "User", "Pokemon"]
+__all__ = ["Card", "CardSet", "CardSeries", "CardPriceHistory", "User", "UserCard", "Pokemon"]

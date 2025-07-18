@@ -11,8 +11,6 @@ class User(Base):
     user_id = Column(UUID(as_uuid=True), primary_key=True)
     user_name = Column(String(255), nullable=False)
     email_address = Column(String(255), nullable=False)
-    gender = Column(String(50), nullable=True)
-    age_range = Column(String(50), nullable=False)
     create_ts = Column(DateTime(timezone=True), server_default=func.now())
     updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
@@ -23,8 +21,6 @@ class User(Base):
             raise ValueError("user_name is required")
         if 'email_address' not in kwargs:
             raise ValueError("email_address is required")
-        if 'age_range' not in kwargs:
-            raise ValueError("age_range is required")
         
         super().__init__(**kwargs)
     
@@ -34,8 +30,6 @@ class User(Base):
             'user_id': str(self.user_id),
             'user_name': self.user_name,
             'email_address': self.email_address,
-            'gender': self.gender,
-            'age_range': self.age_range,
             'create_ts': self.create_ts.isoformat() if self.create_ts else None,
             'updated_ts': self.updated_ts.isoformat() if self.updated_ts else None
         }

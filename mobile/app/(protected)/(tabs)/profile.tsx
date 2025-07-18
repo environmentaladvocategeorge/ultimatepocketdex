@@ -143,7 +143,7 @@ export default function ProfileScreen() {
       setLoading(true);
 
       const response = await fetch(
-        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user-profile`,
+        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user`,
         {
           method: "GET",
           headers: {

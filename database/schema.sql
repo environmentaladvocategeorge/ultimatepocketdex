@@ -3,8 +3,6 @@ CREATE TABLE "User" (
     user_id UUID PRIMARY KEY,
     user_name VARCHAR(255) NOT NULL,
     email_address VARCHAR(255) NOT NULL,
-    gender VARCHAR(50),
-    age_range VARCHAR(50) NOT NULL,
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -77,4 +75,14 @@ CREATE TABLE "Pokemon" (
     create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider_name, provider_id)
+);
+
+CREATE TABLE "UserCard" (
+    user_card_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES "User"(user_id) ON DELETE CASCADE,
+    card_id UUID NOT NULL REFERENCES "Card"(card_id) ON DELETE CASCADE,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    create_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, card_id)
 );
