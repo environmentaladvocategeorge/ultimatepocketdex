@@ -126,7 +126,7 @@ class CognitoService:
         user_name = payload.get("cognito:username")
         email_address = payload.get("email")
         
-        logger.info(f"User information extracted: {user_id}, {user_name}, {email_address}, {age_range}")
+        logger.info(f"User information extracted: {user_id}, {user_name}, {email_address}")
 
         return User(
             user_id=user_id,

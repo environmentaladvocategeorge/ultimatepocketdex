@@ -49,14 +49,14 @@ export default function ProtectedLayout() {
         redirect={!isAuthenticated}
       />
       <Tabs.Screen
-        name="profile"
+        name="vault"
         options={{
           headerTitle: "",
           headerShown: false,
-          tabBarLabel: "Profile",
+          tabBarLabel: "Vault",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "person-outline" : "person"}
+              name={focused ? "grid" : "grid-outline"}
               size={24}
               color={color}
               style={{ height: 24, width: 24 }}
