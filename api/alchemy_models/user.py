@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import json
 from alchemy_models import Base
@@ -13,6 +14,8 @@ class User(Base):
     email_address = Column(String(255), nullable=False)
     create_ts = Column(DateTime(timezone=True), server_default=func.now())
     updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user_cards = relationship("UserCard", back_populates="user", lazy="select")
     
     def __init__(self, **kwargs):
         if 'user_id' not in kwargs:

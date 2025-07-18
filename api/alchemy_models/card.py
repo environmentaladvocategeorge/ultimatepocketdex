@@ -37,7 +37,6 @@ class Card(Base):
     card_set = relationship("CardSet", back_populates="cards", lazy="joined")
 
     owners = relationship("UserCard", back_populates="card", lazy="select")
-    cards = relationship("UserCard", back_populates="user", lazy="select")
 
     latest_price = relationship("CardPriceHistory", foreign_keys=[latest_price_id], lazy="joined")
     price_history = relationship(
