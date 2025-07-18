@@ -65,7 +65,7 @@ def create_search_controller():
                 query = query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
 
             if setName:
-                query = query.filter(CardSet.set_name.ilike(f"%{setName}%"))
+                query = query.filter(CardSet.set_name == setName)
 
             if sortBy == SortBy.PRICE_ASC:
                 query = query.order_by(asc(latest_price_alias.price))

@@ -105,9 +105,9 @@ const styles = StyleSheet.create({
   },
   cardName: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
-    lineHeight: 18,
+    lineHeight: 14,
   },
   cardSet: {
     color: colors.white,
@@ -158,7 +158,7 @@ export default function ExploreScreen() {
 
   useEffect(() => {
     fetchCards(true);
-  }, [sortOption, pokemonFilter]);
+  }, [sortOption, pokemonFilter, cardSetFilter]);
 
   const fetchCards = useCallback(
     async (reset = false) => {
@@ -173,6 +173,9 @@ export default function ExploreScreen() {
         });
         if (pokemonFilter?.name) {
           queryParams.append("pokemonName", pokemonFilter.name);
+        }
+        if (cardSetFilter?.set_name) {
+          queryParams.append("setName", cardSetFilter.set_name);
         }
         const response = await fetch(
           `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
@@ -199,7 +202,7 @@ export default function ExploreScreen() {
         setLoading(false);
       }
     },
-    [getToken, page, hasNext, loading, sortOption, pokemonFilter]
+    [getToken, page, hasNext, loading, sortOption, pokemonFilter, cardSetFilter]
   );
 
   const renderCard = ({ item }: { item: any }) => (
@@ -215,7 +218,7 @@ export default function ExploreScreen() {
       </View>
       <View style={styles.cardInfo}>
         <View style={styles.cardTopInfo}>
-          <Text style={styles.cardName} numberOfLines={2}>
+          <Text style={styles.cardName} numberOfLines={1}>
             {item.card_name}
           </Text>
           {item.card_rarity && (
@@ -369,7 +372,7 @@ export default function ExploreScreen() {
           ref={flashListRef}
           data={cards}
           renderItem={renderCard}
-          keyExtractor={(item) => item.card_id}
+          keyExtractor={(item, index) => `${item.card_id}-${index}`}
           estimatedItemSize={250}
           numColumns={2}
           contentContainerStyle={styles.cardGrid}
