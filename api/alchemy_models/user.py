@@ -15,7 +15,7 @@ class User(Base):
     create_ts = Column(DateTime(timezone=True), server_default=func.now())
     updated_ts = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    user_cards = relationship("UserCard", back_populates="user", lazy="select")
+    cards = relationship("UserCard", back_populates="user", lazy="select")
     
     def __init__(self, **kwargs):
         if 'user_id' not in kwargs:
