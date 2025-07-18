@@ -1,5 +1,10 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Text } from "@/components";
 import { Image as ExpoImage } from "expo-image";
 import { colors } from "@/constants/theme";
@@ -62,10 +67,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   addButtonInline: {
-    marginRight: 8,
+    width: 22,
+    height: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 4,
     backgroundColor: "rgba(255, 255, 255, 0.15)",
-    padding: 2,
-    borderRadius: 12,
+    borderRadius: 11,
   },
   cardNumber: {
     color: "#aaa",
@@ -84,10 +92,24 @@ const styles = StyleSheet.create({
 
 interface CardProps {
   card: CardType;
-  onAdd?: (card: any) => void;
+  onAdd?: (cardId: string) => Promise<void>;
 }
 
 const Card = ({ card, onAdd }: CardProps) => {
+  const [adding, setAdding] = useState(false);
+
+  const handleAdd = async () => {
+    if (!onAdd) return;
+    try {
+      setAdding(true);
+      await onAdd(card.card_id);
+    } catch (error) {
+      console.error("Error adding card:", error);
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.7}>
       <View style={styles.cardImageContainer}>
@@ -115,9 +137,18 @@ const Card = ({ card, onAdd }: CardProps) => {
           {onAdd && (
             <TouchableOpacity
               style={styles.addButtonInline}
-              onPress={() => onAdd(card)}
+              onPress={handleAdd}
+              disabled={adding}
             >
-              <Ionicons name="add" size={18} color="#fff" />
+              {adding ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#fff"
+                  style={{ transform: [{ scale: 0.6 }] }}
+                />
+              ) : (
+                <Ionicons name="add" size={18} color="#fff" />
+              )}
             </TouchableOpacity>
           )}
           <Text style={styles.cardNumber}>{card.card_number}</Text>
