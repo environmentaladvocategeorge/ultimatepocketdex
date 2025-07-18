@@ -39,3 +39,34 @@ export interface CardSet {
   create_ts: string;
   updated_ts: string;
 }
+
+export interface Card {
+  card_id: string;
+  provider_name: string;
+  provider_identifier: string;
+
+  series_id: string;
+  series_name?: string | null;
+
+  card_set_id: string;
+  card_set_name?: string | null;
+
+  card_name: string;
+  card_number: string;
+  card_rarity: string;
+  card_image_url: string;
+
+  types: string[];
+
+  create_ts: string | null;
+  updated_ts: string | null;
+
+  latest_price?: CardPriceHistory | null;
+}
+
+export interface CardPriceHistory {
+  price_id: string;
+  card_id: string;
+  price: number;
+  recorded_at: string;
+}

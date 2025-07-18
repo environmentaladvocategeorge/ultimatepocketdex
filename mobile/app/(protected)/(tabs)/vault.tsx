@@ -22,7 +22,7 @@ export default function VaultScreen() {
       setLoading(true);
 
       const response = await fetch(
-        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user`,
+        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
         {
           method: "GET",
           headers: {
@@ -31,8 +31,6 @@ export default function VaultScreen() {
           },
         }
       );
-
-      console.log(response);
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);

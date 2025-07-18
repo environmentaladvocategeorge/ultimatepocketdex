@@ -10,8 +10,8 @@ import {
   Text,
   SearchSortOptionsBottomSheet,
   PokemonFilterOptionsBottomSheet,
+  Card,
 } from "@/components";
-import { Image as ExpoImage } from "expo-image";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -21,7 +21,7 @@ import { SortOption, sortOptions } from "@/constants/sortAndFilter";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import CardSetFilterOptionsBottomSheet from "@/components/CardSetFilterOptionsBottomSheet.tsx/CardSetFilterOptionsBottomSheet";
-import { CardSet, Pokemon } from "@/types/api";
+import { Card as CardType, CardSet, Pokemon } from "@/types/api";
 
 const styles = StyleSheet.create({
   container: {
@@ -54,91 +54,6 @@ const styles = StyleSheet.create({
   cardGrid: {
     paddingHorizontal: 4,
     paddingBottom: 100,
-  },
-  cardItem: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#333",
-    margin: 4,
-    flex: 1,
-  },
-  cardImageContainer: {
-    width: "100%",
-    height: 120,
-    borderRadius: 6,
-    overflow: "hidden",
-    backgroundColor: "#2a2a2a",
-    marginBottom: 6,
-  },
-  cardImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-  placeholderImage: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#2a2a2a",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  placeholderText: {
-    color: "#666",
-    fontSize: 10,
-    fontWeight: "500",
-  },
-  imageLoader: {
-    backgroundColor: "#2a2a2a",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  cardInfo: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardTopInfo: {
-    gap: 2,
-  },
-  cardName: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 14,
-  },
-  cardSet: {
-    color: colors.white,
-    fontSize: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  cardRarity: {
-    color: "#4d7cc9",
-    fontSize: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  cardBottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  cardNumber: {
-    color: "#aaa",
-    fontSize: 10,
-    flex: 1,
-    textAlign: "left",
-  },
-  cardPrice: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "right",
-    flex: 1,
   },
 });
 
@@ -205,43 +120,26 @@ export default function ExploreScreen() {
     [getToken, page, hasNext, loading, sortOption, pokemonFilter, cardSetFilter]
   );
 
-  const renderCard = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.cardItem} activeOpacity={0.7}>
-      <View style={styles.cardImageContainer}>
-        <ExpoImage
-          source={{ uri: item.card_image_url }}
-          style={styles.cardImage}
-          contentFit="contain"
-          recyclingKey={item.card_id}
-          transition={100}
-        />
-      </View>
-      <View style={styles.cardInfo}>
-        <View style={styles.cardTopInfo}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.card_name}
-          </Text>
-          {item.card_rarity && (
-            <Text style={styles.cardSet}>{item.card_set_name}</Text>
-          )}
-          {item.card_rarity && (
-            <Text style={styles.cardRarity}>{item.card_rarity}</Text>
-          )}
-        </View>
-        <View style={styles.cardBottomRow}>
-          <Text style={styles.cardNumber}>{item.card_number}</Text>
-          <Text style={styles.cardPrice}>
-            {item.latest_price?.price !== undefined &&
-            item.latest_price?.price !== null
-              ? `$${Number(item.latest_price.price).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
-              : "$0.00"}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const addCardToUser = async (cardId: string) => {
+    const token = await getToken();
+    const response = await fetch(
+      `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          card_id: cardId,
+        },
+      }
+    );
+    console.log(response);
+  };
+
+  const renderCard = ({ item }: { item: CardType }) => (
+    <Card card={item} onAdd={addCardToUser} />
   );
 
   return (
@@ -332,7 +230,7 @@ export default function ExploreScreen() {
             >
               {pokemonFilter ? (
                 <LinearGradient
-                  colors={getGradientColors(pokemonFilter.types)}
+                  colors={getGradientColors(pokemonFilter.types) as any}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.pill, { borderWidth: 0, paddingRight: 8 }]}

@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from alchemy_models.user import User
 from alchemy_models.card import Card
 from alchemy_models.user_card import UserCard
+from api_models.requests import AddCardRequest
 from repository.postgresql_database import PostgresDatabase
 from services.cognito_service import CognitoService
 from utils.logger import get_logger
@@ -49,9 +50,11 @@ def create_user_controller():
             session.close()
 
     @router.post("/user/card")
-    async def add_card_to_user(card_id: str, quantity: int = 1, user: User = Depends(cognito_service.extract_token)):
+    async def add_card_to_user(request: AddCardRequest, user: User = Depends(cognito_service.extract_token)):
         session = db.get_session()
         try:
+            card_id = request.card_id
+            quantity = request.quantity
             card = session.query(Card).filter_by(card_id=card_id).first()
             if not card:
                 raise HTTPException(status_code=404, detail="Card not found")
