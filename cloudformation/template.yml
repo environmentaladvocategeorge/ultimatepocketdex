@@ -37,6 +37,8 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
+        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
 
   # Cognito Nested Stack
   Cognito:
