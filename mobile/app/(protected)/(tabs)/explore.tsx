@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, use } from "react";
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   SearchSortOptionsBottomSheet,
   PokemonFilterOptionsBottomSheet,
   Card,
+  SearchInput,
 } from "@/components";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
@@ -67,6 +68,7 @@ export default function ExploreScreen() {
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
   const [pokemonFilter, setPokemonFilter] = useState<Pokemon | null>(null);
   const [cardSetFilter, setCardSetFilter] = useState<CardSet | null>(null);
+  const [q, setQ] = useState<string>("");
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
   const cardSetFilterSheetRef = useRef<BottomSheetModal>(null);
@@ -202,6 +204,11 @@ export default function ExploreScreen() {
       />
       <View style={styles.container}>
         <View style={styles.pillContainer}>
+          <SearchInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search for any card or Pokémon..."
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
