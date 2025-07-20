@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import Text from "@/components/Text/Text";
 import { colors } from "@/constants/theme";
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: "row",

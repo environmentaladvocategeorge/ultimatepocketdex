@@ -76,7 +76,7 @@ export default function ExploreScreen() {
 
   useEffect(() => {
     fetchCards(true);
-  }, [sortOption, pokemonFilter, cardSetFilter]);
+  }, [sortOption, pokemonFilter, cardSetFilter, q]);
 
   const fetchCards = useCallback(
     async (reset = false, isRefresh = false) => {
@@ -100,6 +100,9 @@ export default function ExploreScreen() {
         }
         if (cardSetFilter?.set_name) {
           queryParams.append("setName", cardSetFilter.set_name);
+        }
+        if (q) {
+          queryParams.append("q", q);
         }
 
         const response = await fetch(
@@ -137,7 +140,16 @@ export default function ExploreScreen() {
         }
       }
     },
-    [getToken, page, hasNext, loading, sortOption, pokemonFilter, cardSetFilter]
+    [
+      getToken,
+      page,
+      hasNext,
+      loading,
+      sortOption,
+      pokemonFilter,
+      cardSetFilter,
+      q,
+    ]
   );
 
   const addCardToUser = async (cardId: string, quantity = 1) => {
@@ -203,12 +215,12 @@ export default function ExploreScreen() {
         }}
       />
       <View style={styles.container}>
+        <SearchInput
+          value={q}
+          onChangeText={setQ}
+          placeholder="Search for any card or Pokémon..."
+        />
         <View style={styles.pillContainer}>
-          <SearchInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search for any card or Pokémon..."
-          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}

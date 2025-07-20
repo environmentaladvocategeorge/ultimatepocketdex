@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, func
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import or_
 from sqlalchemy.exc import SQLAlchemyError
@@ -50,24 +50,28 @@ def create_search_controller():
     ):
         session = db.get_session()
         try:
-            logger.info(f"Fetching cards - Page: {page}, Page Size: {pageSize}, Sort: {sortBy}, Pokémon: {pokemonName}, Set: {setName}")
+            logger.info(f"Fetching cards - Page: {page}, Page Size: {pageSize}, Sort: {sortBy}, Pokémon: {pokemonName}, Set: {setName}, Query: {q}")
 
             offset = (page - 1) * pageSize
 
+            # Base query with all necessary joins
             query = session.query(Card).options(
                 joinedload(Card.card_set).joinedload(CardSet.series),
                 joinedload(Card.latest_price)
             ).join(
-                latest_price_alias, Card.latest_price_id == latest_price_alias.price_id, isouter=True
-            ).join(
                 CardSet, Card.card_set_id == CardSet.card_set_id
+            ).join(
+                CardSeries, CardSet.series_id == CardSeries.series_id
+            ).outerjoin(
+                latest_price_alias, Card.latest_price_id == latest_price_alias.price_id
             )
 
+            # Apply filters
             if pokemonName:
                 query = query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
 
             if setName:
-                query = query.filter(CardSet.set_name == setName)
+                query = query.filter(CardSet.set_name.ilike(f"%{setName}%"))
 
             if q:
                 search_term = f"%{q.strip()}%"
@@ -80,6 +84,36 @@ def create_search_controller():
                     )
                 )
 
+            # Count distinct cards for proper pagination
+            count_query = session.query(func.count(func.distinct(Card.card_id))).select_from(
+                Card
+            ).join(
+                CardSet, Card.card_set_id == CardSet.card_set_id
+            ).join(
+                CardSeries, CardSet.series_id == CardSeries.series_id
+            ).outerjoin(
+                latest_price_alias, Card.latest_price_id == latest_price_alias.price_id
+            )
+
+            # Apply the same filters to count query
+            if pokemonName:
+                count_query = count_query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
+
+            if setName:
+                count_query = count_query.filter(CardSet.set_name.ilike(f"%{setName}%"))
+
+            if q:
+                search_term = f"%{q.strip()}%"
+                count_query = count_query.filter(
+                    or_(
+                        Card.card_name.ilike(search_term),
+                        Card.card_number.ilike(search_term),
+                        CardSet.set_name.ilike(search_term),
+                        CardSeries.series_name.ilike(search_term)
+                    )
+                )
+
+            # Apply sorting
             if sortBy == SortBy.PRICE_ASC:
                 query = query.order_by(asc(latest_price_alias.price))
             elif sortBy == SortBy.PRICE_DESC:
@@ -89,11 +123,16 @@ def create_search_controller():
             elif sortBy == SortBy.NAME_DESC:
                 query = query.order_by(desc(Card.card_name))
 
-            total_count = query.count()
+            # Get total count
+            total_count = count_query.scalar()
+            
+            # Get paginated results
             paginated_cards = query.offset(offset).limit(pageSize).all()
             cards_data = [card.to_dict() for card in paginated_cards]
 
             total_pages = (total_count + pageSize - 1) // pageSize
+
+            logger.info(f"Query returned {len(paginated_cards)} cards out of {total_count} total")
 
             return JSONResponse(content={
                 "cards": cards_data,
