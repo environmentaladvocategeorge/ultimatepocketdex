@@ -17,29 +17,6 @@ Parameters:
     Description: "ARN of the IAM role for deployment."
 
 Resources:
-  # API Nested Stack
-  API:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: api.yml
-      Parameters:
-        Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
-        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
-        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
-        ImageRecognitionApiUrl: !GetAtt ImageRecognition.Outputs.ImageRecognitionApiUrl
-
-  # Image Recognition Nested Stack
-  ImageRecognition:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: image_recognition.yml
-      Parameters:
-        Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
-        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
-        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
-
   # Cognito Nested Stack
   Cognito:
     Type: AWS::Serverless::Application
@@ -57,3 +34,26 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+
+  # Image Recognition Nested Stack
+  ImageRecognition:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: image_recognition.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
+        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
+
+  # API Nested Stack
+  API:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: api.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
+        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
+        ImageRecognitionApiUrl: !GetAtt ImageRecognition.Outputs.ImageRecognitionApiUrl
