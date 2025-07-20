@@ -6,3 +6,4 @@ pydantic
 jwt
 psycopg2-binary
 sqlalchemy
+python-jose
