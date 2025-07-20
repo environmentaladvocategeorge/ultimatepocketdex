@@ -3,8 +3,9 @@ import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
-import { Card as CardType, UserCard } from "@/types/api";
+import { UserCard } from "@/types/api";
 import { Card, Text } from "@/components";
+import { useFocusEffect } from "@react-navigation/native";
 import VaultValue from "@/components/VaultValue/VaultValue";
 
 const styles = StyleSheet.create({
@@ -57,15 +58,17 @@ export default function VaultScreen() {
     [getToken]
   );
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadUserCards();
-    }
-  }, [isAuthenticated, loadUserCards]);
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        loadUserCards();
+      }
+    }, [isAuthenticated, loadUserCards])
+  );
 
   const renderCard = ({ item }: { item: UserCard }) => {
     if (!item.card) return null;
-    return <Card card={item.card} />;
+    return <Card card={item.card} quantity={item.quantity} />;
   };
 
   return (

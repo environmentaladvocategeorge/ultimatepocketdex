@@ -90,14 +90,21 @@ const styles = StyleSheet.create({
     textAlign: "right",
     flex: 1,
   },
+  userCardQuantity: {
+    color: colors.grey,
+    fontSize: 10,
+    fontWeight: "500",
+    textAlign: "right",
+  },
 });
 
 interface CardProps {
   card: CardType;
+  quantity?: number;
   onAdd?: (cardId: string) => Promise<void>;
 }
 
-const Card = ({ card, onAdd }: CardProps) => {
+const Card = ({ card, onAdd, quantity }: CardProps) => {
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -181,6 +188,9 @@ const Card = ({ card, onAdd }: CardProps) => {
               : "$0.00"}
           </Text>
         </View>
+        {quantity !== undefined && (
+          <Text style={styles.userCardQuantity}>Quantity: {quantity}</Text>
+        )}
       </View>
     </TouchableOpacity>
   );
