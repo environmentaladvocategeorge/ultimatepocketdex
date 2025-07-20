@@ -3,8 +3,9 @@ import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { colors } from "@/constants/theme";
 import { useAuthentication } from "@/context/AuthenticationContext";
-import { Card as CardType } from "@/types/api";
-import { Card } from "@/components";
+import { Card as CardType, UserCard } from "@/types/api";
+import { Card, Text } from "@/components";
+import VaultValue from "@/components/VaultValue/VaultValue";
 
 const styles = StyleSheet.create({
   container: {
@@ -20,10 +21,10 @@ const styles = StyleSheet.create({
 
 export default function VaultScreen() {
   const { getToken, isAuthenticated } = useAuthentication();
-  const [cards, setCards] = useState<CardType[]>([]);
+  const [cards, setCards] = useState<UserCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const flashListRef = useRef<FlashList<CardType>>(null);
+  const flashListRef = useRef<FlashList<UserCard>>(null);
 
   const loadUserCards = useCallback(
     async (isRefresh = false) => {
@@ -62,7 +63,10 @@ export default function VaultScreen() {
     }
   }, [isAuthenticated, loadUserCards]);
 
-  const renderCard = ({ item }: { item: any }) => <Card card={item.card} />;
+  const renderCard = ({ item }: { item: UserCard }) => {
+    if (!item.card) return null;
+    return <Card card={item.card} />;
+  };
 
   return (
     <View style={styles.container}>
@@ -77,6 +81,20 @@ export default function VaultScreen() {
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={() => loadUserCards(true)}
+        ListHeaderComponent={
+          <View style={{ padding: 8, alignItems: "center" }}>
+            <Text style={{ color: colors.grey }}>Total Vault Value</Text>
+            <VaultValue
+              value={cards.reduce((total, userCard) => {
+                const price = userCard.card?.latest_price?.price;
+                return (
+                  total +
+                  (price !== undefined && price !== null ? Number(price) : 0)
+                );
+              }, 0)}
+            />
+          </View>
+        }
         ListFooterComponent={
           loading && !refreshing ? (
             <View style={{ paddingVertical: 16 }}>

@@ -64,6 +64,16 @@ export interface Card {
   latest_price?: CardPriceHistory | null;
 }
 
+export interface UserCard {
+  user_card_id: string;
+  user_id: string;
+  card_id: string;
+  quantity: number;
+  create_ts: string | null;
+  updated_ts: string | null;
+  card?: Card | null;
+}
+
 export interface CardPriceHistory {
   price_id: string;
   card_id: string;
