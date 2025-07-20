@@ -22,35 +22,39 @@ export default function VaultScreen() {
   const { getToken, isAuthenticated } = useAuthentication();
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const flashListRef = useRef<FlashList<CardType>>(null);
 
-  const loadUserCards = useCallback(async () => {
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const response = await fetch(
-        `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+  const loadUserCards = useCallback(
+    async (isRefresh = false) => {
+      try {
+        isRefresh ? setRefreshing(true) : setLoading(true);
+        const token = await getToken();
+        const response = await fetch(
+          `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/user/card`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const data = await response.json();
+        setCards(data);
+      } catch (error) {
+        console.error("Failed to fetch user cards:", error);
+      } finally {
+        isRefresh ? setRefreshing(false) : setLoading(false);
       }
-
-      const data = await response.json();
-      setCards(data);
-    } catch (error) {
-      console.error("Failed to fetch user cards:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
+    },
+    [getToken]
+  );
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -71,8 +75,10 @@ export default function VaultScreen() {
         numColumns={2}
         contentContainerStyle={styles.cardGrid}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={() => loadUserCards(true)}
         ListFooterComponent={
-          loading ? (
+          loading && !refreshing ? (
             <View style={{ paddingVertical: 16 }}>
               <ActivityIndicator size="small" color="#4d7cc9" />
             </View>

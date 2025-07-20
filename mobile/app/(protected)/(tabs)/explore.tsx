@@ -63,6 +63,7 @@ export default function ExploreScreen() {
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
   const [pokemonFilter, setPokemonFilter] = useState<Pokemon | null>(null);
   const [cardSetFilter, setCardSetFilter] = useState<CardSet | null>(null);
@@ -76,22 +77,29 @@ export default function ExploreScreen() {
   }, [sortOption, pokemonFilter, cardSetFilter]);
 
   const fetchCards = useCallback(
-    async (reset = false) => {
+    async (reset = false, isRefresh = false) => {
       if (loading || (!hasNext && !reset)) return;
       try {
-        setLoading(true);
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
         const token = await getToken();
         const queryParams = new URLSearchParams({
           pageSize: "50",
           page: reset ? "1" : page.toString(),
           sortBy: sortOption.sort,
         });
+
         if (pokemonFilter?.name) {
           queryParams.append("pokemonName", pokemonFilter.name);
         }
         if (cardSetFilter?.set_name) {
           queryParams.append("setName", cardSetFilter.set_name);
         }
+
         const response = await fetch(
           `https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search?${queryParams.toString()}`,
           {
@@ -102,19 +110,29 @@ export default function ExploreScreen() {
             },
           }
         );
+
         if (!response.ok) {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
+
         const { cards: newCards, pagination } = await response.json();
-        setCards((prev) => (reset ? newCards : [...prev, ...newCards]));
+        setCards((prev) =>
+          reset || isRefresh ? newCards : [...prev, ...newCards]
+        );
         setHasNext(pagination?.hasNext ?? false);
-        setPage((prev) => (reset ? 2 : prev + 1));
-        if (reset)
+        setPage(reset || isRefresh ? 2 : page + 1);
+
+        if (reset || isRefresh) {
           flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
+        }
       } catch (error) {
         console.error("Failed to fetch cards:", error);
       } finally {
-        setLoading(false);
+        if (isRefresh) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
       }
     },
     [getToken, page, hasNext, loading, sortOption, pokemonFilter, cardSetFilter]
@@ -290,6 +308,8 @@ export default function ExploreScreen() {
           showsVerticalScrollIndicator={false}
           onEndReached={() => fetchCards()}
           onEndReachedThreshold={0.2}
+          refreshing={refreshing}
+          onRefresh={() => fetchCards(true, true)}
           ListFooterComponent={
             loading ? (
               <View style={{ paddingVertical: 16 }}>

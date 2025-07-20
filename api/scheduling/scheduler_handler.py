@@ -125,30 +125,19 @@ def upsert_card_sets(card_sets, session):
         (s.provider_name, s.provider_identifier): s for s in existing_sets
     }
 
-    sets_to_update = []
     sets_to_insert = []
 
     for new_set in card_sets:
         key = (new_set.provider_name, new_set.provider_identifier)
-        existing_set = existing_lookup.get(key)
-
-        if existing_set:
-            if existing_set.set_card_count != new_set.set_card_count:
-                existing_set.set_card_count = new_set.set_card_count
-                sets_to_update.append(existing_set)
-                count += 1
-        else:
+        if key not in existing_lookup:
             sets_to_insert.append(new_set)
             count += 1
 
-    if sets_to_update:
-        session.add_all(sets_to_update)
     if sets_to_insert:
         session.add_all(sets_to_insert)
 
     session.commit()
     return count
-
 
 def retrieve_cards_by_set(card_sets):
     def get_cards(card_set):
