@@ -48,8 +48,9 @@ def create_search_controller():
         setName: Optional[str] = Query(None, description="Name of the card set to filter by (partial match)"),
         q: Optional[str] = Query(None, description="Search query across card name, number, set, and series")
     ):
-        session = db.get_session()
+        session = None
         try:
+            session = db.get_session()
             logger.info(f"Fetching cards - Page: {page}, Page Size: {pageSize}, Sort: {sortBy}, Pokémon: {pokemonName}, Set: {setName}, Query: {q}")
 
             offset = (page - 1) * pageSize
@@ -146,6 +147,7 @@ def create_search_controller():
             logger.error(f"Unexpected error: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
-            session.close()
+            if session: 
+                session.close()
 
     return router

@@ -22,8 +22,10 @@ cognito_service = CognitoService()
 def create_user_controller():  
     @router.get("/user")
     async def get_user(user: User = Depends(cognito_service.extract_token)):
-        session = db.get_session()
+        session = None
         try:
+            session = db.get_session()
+
             logger.info(f"User {user.user_id} requested their own profile.")
             
             existing_user = session.query(User).filter_by(user_id=user.user_id).first()
@@ -48,12 +50,15 @@ def create_user_controller():
             logger.error(f"Error retrieving or creating user profile: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
-            session.close()
+            if session:
+                session.close()
 
     @router.post("/user/card")
     async def add_card_to_user(request: AddCardRequest, user: User = Depends(cognito_service.extract_token)):
-        session = db.get_session()
+        session = None
         try:
+            session = db.get_session()
+
             card_id = request.card_id
             quantity = request.quantity
             card = session.query(Card).filter_by(card_id=card_id).first()
@@ -77,12 +82,14 @@ def create_user_controller():
             logger.error(f"Error adding card to user: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
-            session.close()
+            if session:
+                session.close()
 
     @router.get("/user/card")
     async def get_user_cards(user: User = Depends(cognito_service.extract_token)):
-        session = db.get_session()
+        session = None
         try:
+            session = db.get_session()
             user_cards = (
                 session.query(UserCard)
                 .filter(UserCard.user_id == user.user_id, UserCard.quantity > 0)
@@ -113,6 +120,7 @@ def create_user_controller():
             logger.error(f"Error fetching user cards: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
-            session.close()
+            if session:
+                session.close()
 
     return router

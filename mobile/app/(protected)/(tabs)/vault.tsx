@@ -23,6 +23,8 @@ const styles = StyleSheet.create({
 export default function VaultScreen() {
   const { getToken, isAuthenticated } = useAuthentication();
   const [cards, setCards] = useState<UserCard[]>([]);
+  const [totalValue, setTotalValue] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const flashListRef = useRef<FlashList<UserCard>>(null);
@@ -47,8 +49,15 @@ export default function VaultScreen() {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
-        setCards(data);
+        const {
+          user_cards: userCards,
+          total_user_card_value: totalUserCardValue,
+          total_user_card_count: totalUserCardCount,
+        } = await response.json();
+
+        setCards(userCards);
+        setTotalValue(totalUserCardValue);
+        setTotalCount(totalUserCardCount);
       } catch (error) {
         console.error("Failed to fetch user cards:", error);
       } finally {
@@ -86,16 +95,10 @@ export default function VaultScreen() {
         onRefresh={() => loadUserCards(true)}
         ListHeaderComponent={
           <View style={{ padding: 8, alignItems: "center" }}>
-            <Text style={{ color: colors.grey }}>Total Vault Value</Text>
-            <VaultValue
-              value={cards.reduce((total, userCard) => {
-                const price = userCard.card?.latest_price?.price;
-                return (
-                  total +
-                  (price !== undefined && price !== null ? Number(price) : 0)
-                );
-              }, 0)}
-            />
+            <Text
+              style={{ color: colors.grey }}
+            >{`Vault Total (${totalCount} cards)`}</Text>
+            <VaultValue value={totalValue} />
           </View>
         }
         ListFooterComponent={

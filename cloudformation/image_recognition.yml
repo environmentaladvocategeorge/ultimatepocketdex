@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for the API Service
+
+Parameters:
+  Environment:
+    Type: String
+    Description: "Deployment environment."
+  ResourceBaseIdentifier:
+    Type: String
+    Description: "Base identifier for resource naming."
+  CognitoUserPoolId:
+    Type: String
+    Description: "The ID of the Cognito User Pool used for authentication."
+  CognitoUserPoolClientId:
+    Type: String
+    Description: "The Client ID for the Cognito User Pool used for authentication."
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../image_recognition/
+      Handler: main.handler
+      Runtime: python3.9
+      Timeout: 240
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_APP_CLIENT_ID: !Ref CognitoUserPoolClientId
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - rds:*
+              Resource: "*"
+      Events:
+        GenereateEmbedding:
+          Type: Api
+          Properties:
+            Path: /embedding
+            Method: POST
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: False
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}
+            IdentitySource: "method.request.header.Authorization"
+            ValidationExpression: "^Bearer [A-Za-z0-9-_=.]+$"
+
+Outputs:
+  ImageRecognitionApiUrl:
+    Description: "URL of the Image Recognition API"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
