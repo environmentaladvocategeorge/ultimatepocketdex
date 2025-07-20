@@ -89,8 +89,26 @@ def create_user_controller():
                 .order_by(desc(UserCard.updated_ts))
                 .all()
             )
-            response = [uc.to_dict() for uc in user_cards]
-            return JSONResponse(content=response)
+
+            response = []
+            total_user_card_count = 0
+            total_user_card_value = 0.0
+
+            for uc in user_cards:
+                card_data = uc.to_dict()
+                response.append(card_data)
+
+                quantity = uc.quantity or 0
+                price = getattr(getattr(uc.card.latest_price, "price", 0), "__float__", lambda: 0.0)()
+                total_user_card_count += quantity
+                total_user_card_value += quantity * price
+
+            return JSONResponse(content={
+                "user_cards": response,
+                "total_user_card_count": total_user_card_count,
+                "total_user_card_value": round(total_user_card_value, 2)
+            })
+
         except Exception as e:
             logger.error(f"Error fetching user cards: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
