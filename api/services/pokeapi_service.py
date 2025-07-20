@@ -2,7 +2,7 @@ from pydantic import ValidationError
 import requests
 from typing import List, Union
 from alchemy_models.pokemon import Pokemon
-from response_models.pokeapi import PokemonDetailResponse, PokemonListResponseModel, PokemonType
+from api_models.pokeapi import PokemonDetailResponse, PokemonListResponseModel, PokemonType
 
 
 class PokeAPIService:

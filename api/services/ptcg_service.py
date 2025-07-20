@@ -4,7 +4,7 @@ from requests.exceptions import HTTPError
 from datetime import datetime
 
 from alchemy_models.card_price_history import CardPriceHistory
-from response_models.ptcg import CardMarketPrice, PTCGCard, PTCGCardListResponse, PTCGSetListResponse, TcgPlayerPrices
+from api_models.ptcg import CardMarketPrice, PTCGCard, PTCGCardListResponse, PTCGSetListResponse, TcgPlayerPrices
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from alchemy_models.card_series import CardSeries
