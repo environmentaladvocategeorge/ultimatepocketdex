@@ -54,7 +54,6 @@ def create_search_controller():
 
             offset = (page - 1) * pageSize
 
-            # Base query with all necessary joins
             query = session.query(Card).options(
                 joinedload(Card.card_set).joinedload(CardSet.series),
                 joinedload(Card.latest_price)
@@ -66,7 +65,6 @@ def create_search_controller():
                 latest_price_alias, Card.latest_price_id == latest_price_alias.price_id
             )
 
-            # Apply filters
             if pokemonName:
                 query = query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
 
@@ -84,7 +82,6 @@ def create_search_controller():
                     )
                 )
 
-            # Count distinct cards for proper pagination
             count_query = session.query(func.count(func.distinct(Card.card_id))).select_from(
                 Card
             ).join(
@@ -95,7 +92,6 @@ def create_search_controller():
                 latest_price_alias, Card.latest_price_id == latest_price_alias.price_id
             )
 
-            # Apply the same filters to count query
             if pokemonName:
                 count_query = count_query.filter(Card.card_name.ilike(f"%{pokemonName}%"))
 
@@ -113,7 +109,6 @@ def create_search_controller():
                     )
                 )
 
-            # Apply sorting
             if sortBy == SortBy.PRICE_ASC:
                 query = query.order_by(asc(latest_price_alias.price))
             elif sortBy == SortBy.PRICE_DESC:
@@ -123,10 +118,8 @@ def create_search_controller():
             elif sortBy == SortBy.NAME_DESC:
                 query = query.order_by(desc(Card.card_name))
 
-            # Get total count
             total_count = count_query.scalar()
             
-            # Get paginated results
             paginated_cards = query.offset(offset).limit(pageSize).all()
             cards_data = [card.to_dict() for card in paginated_cards]
 
