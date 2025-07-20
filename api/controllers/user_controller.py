@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from sqlalchemy import desc
 from alchemy_models.user import User
 from alchemy_models.card import Card
 from alchemy_models.user_card import UserCard
@@ -84,7 +85,8 @@ def create_user_controller():
         try:
             user_cards = (
                 session.query(UserCard)
-                .filter_by(user_id=user.user_id)
+                .filter(UserCard.user_id == user.user_id, UserCard.quantity > 0)
+                .order_by(desc(UserCard.updated_ts))
                 .all()
             )
             response = [uc.to_dict() for uc in user_cards]
