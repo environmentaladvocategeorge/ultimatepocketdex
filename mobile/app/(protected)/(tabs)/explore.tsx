@@ -89,6 +89,7 @@ export default function ExploreScreen() {
         }
 
         const token = await getToken();
+        console.log(token);
         const queryParams = new URLSearchParams({
           pageSize: "50",
           page: reset ? "1" : page.toString(),

@@ -134,16 +134,8 @@ export const reAuthenticateUser = async (
 
     cognitoUser.setSignInUserSession(session);
 
-    if (!session.isValid()) {
-      try {
-        session = await refreshUserSession(username, refreshToken);
-        cognitoUser.setSignInUserSession(session);
-      } catch (refreshErr) {
-        return callback(
-          new Error("Stored session is invalid or expired and refresh failed"),
-          null
-        );
-      }
+    if (!session.isValid() || willExpireSoon(session)) {
+      session = await refreshUserSession(username, refreshToken);
     }
 
     return callback(null, session);
@@ -151,6 +143,16 @@ export const reAuthenticateUser = async (
     return callback(e as Error, null);
   }
 };
+
+function willExpireSoon(session: CognitoUserSession, bufferSeconds = 60) {
+  const idExp = session.getIdToken().decodePayload().exp;
+  const accessExp = session.getAccessToken().decodePayload().exp;
+  const now = Date.now();
+  return (
+    idExp * 1000 - now < bufferSeconds * 1000 ||
+    accessExp * 1000 - now < bufferSeconds * 1000
+  );
+}
 
 export const refreshUserSession = async (
   username: string,
