@@ -73,6 +73,14 @@ Resources:
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoAuthorizer
+        ImageSearch:
+          Type: Api
+          Properties:
+            Path: /search/image
+            Method: POST
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoAuthorizer
         GetPokemon:
           Type: Api
           Properties:

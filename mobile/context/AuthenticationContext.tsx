@@ -1,4 +1,5 @@
-import { reAuthenticateUser } from "@/lib/cognito";
+import { reAuthenticateUser, refreshUserSession } from "@/lib/cognito";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CognitoUserSession } from "amazon-cognito-identity-js";
 import {
   createContext,
@@ -11,7 +12,7 @@ import {
 interface AuthenticationContextType {
   user: CognitoUserSession | null;
   setUser: any;
-  getToken: () => string | null;
+  getToken: () => Promise<string | null>;
   isAuthenticated: boolean;
   setIsAuthenticated: any;
   getUserName: () => string | null;
@@ -40,9 +41,19 @@ export const AuthenticationProvider = ({
     });
   }, []);
 
-  const getToken = (): string | null => {
+  const getToken = async (): Promise<string | null> => {
     try {
-      return user?.getIdToken().getJwtToken() || null;
+      if (!user) return null;
+      if (user.isValid()) {
+        return user.getIdToken().getJwtToken();
+      } else {
+        const raw = await AsyncStorage.getItem("cognitoSession");
+        if (!raw) return null;
+        const { username, refreshToken } = JSON.parse(raw);
+        const newSession = await refreshUserSession(username, refreshToken);
+        setUser(newSession);
+        return newSession.getIdToken().getJwtToken();
+      }
     } catch (error) {
       console.error("Failed to get access token:", error);
       return null;

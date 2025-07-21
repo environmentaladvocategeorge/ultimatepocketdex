@@ -1,6 +1,8 @@
+import os
 from typing import Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, UploadFile, File
 from fastapi.responses import JSONResponse
+import requests
 from sqlalchemy import desc, asc, func
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import or_
@@ -149,5 +151,27 @@ def create_search_controller():
         finally:
             if session: 
                 session.close()
+
+    @router.post("/search/image")
+    async def search_by_image(image: UploadFile = File(...)):
+        try:
+            logger.info(f"Received image: {image.filename}")
+
+            IMAGE_RECOGNITION_API_URL = os.environ.get("IMAGE_RECOGNITION_API_URL", "")
+
+            embedding_url = f"{IMAGE_RECOGNITION_API_URL}/embedding"
+            logger.info(f"Calling embedding endpoint: {embedding_url}")
+
+            response = requests.post(embedding_url)
+            response.raise_for_status()
+
+            embedding_result = response.json()
+            logger.info(f"Embedding result: {embedding_result}")
+
+            return JSONResponse(content=embedding_result)
+
+        except Exception as e:
+            logger.error(f"Unexpected error in /search/image: {str(e)}")
+            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
 
     return router

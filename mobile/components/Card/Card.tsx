@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Text } from "@/components";
+import Text from "../Text/Text";
 import { Image as ExpoImage } from "expo-image";
 import { colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";

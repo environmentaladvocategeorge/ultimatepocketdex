@@ -1,9 +1,13 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   CognitoUserPool,
   CognitoUser,
   CognitoUserAttribute,
   AuthenticationDetails,
   CognitoUserSession,
+  CognitoIdToken,
+  CognitoAccessToken,
+  CognitoRefreshToken,
 } from "amazon-cognito-identity-js";
 
 const poolData = {
@@ -14,15 +18,12 @@ const poolData = {
 export const userPool = new CognitoUserPool(poolData);
 
 export const signInUser = (emailAddress: string, password: string) => {
-  if (!emailAddress || !password) {
-    return;
-  }
+  if (!emailAddress || !password) return;
 
-  const authenticationData = {
+  const authDetails = new AuthenticationDetails({
     Username: emailAddress,
     Password: password,
-  };
-  const authenticationDetails = new AuthenticationDetails(authenticationData);
+  });
 
   const user = new CognitoUser({
     Username: emailAddress,
@@ -30,13 +31,25 @@ export const signInUser = (emailAddress: string, password: string) => {
   });
 
   return new Promise((resolve, reject) => {
-    user.authenticateUser(authenticationDetails, {
-      onSuccess: (data) => {
-        resolve(data);
+    user.authenticateUser(authDetails, {
+      onSuccess: async (session) => {
+        const idToken = session.getIdToken().getJwtToken();
+        const accessToken = session.getAccessToken().getJwtToken();
+        const refreshToken = session.getRefreshToken().getToken();
+
+        await AsyncStorage.setItem(
+          "cognitoSession",
+          JSON.stringify({
+            username: emailAddress,
+            idToken,
+            accessToken,
+            refreshToken,
+          })
+        );
+
+        resolve(session);
       },
-      onFailure: (err) => {
-        reject(err);
-      },
+      onFailure: (err) => reject(err),
     });
   });
 };
@@ -99,44 +112,72 @@ export const confirmUserSignUp = (
   });
 };
 
-export const reAuthenticateUser = (
+export const reAuthenticateUser = async (
   callback: (error: Error | null, result: CognitoUserSession | null) => void
 ) => {
-  const cognitoUser = userPool.getCurrentUser();
+  try {
+    const raw = await AsyncStorage.getItem("cognitoSession");
+    if (!raw) return callback(new Error("No session stored"), null);
 
-  if (cognitoUser) {
-    cognitoUser.getSession(
-      (err: Error | null, session: CognitoUserSession | null) => {
-        if (err) {
-          console.error("Failed to get session:", err);
-          callback(err, null);
-        } else {
-          if (session && session.isValid()) {
-            callback(null, session);
-          } else {
-            const refreshToken = session?.getRefreshToken();
+    const { username, idToken, accessToken, refreshToken } = JSON.parse(raw);
 
-            if (refreshToken) {
-              cognitoUser.refreshSession(
-                refreshToken,
-                (refreshErr, newSession) => {
-                  if (refreshErr) {
-                    console.error("Failed to refresh session:", refreshErr);
-                    callback(refreshErr, null);
-                  } else {
-                    callback(null, newSession);
-                  }
-                }
-              );
-            } else {
-              console.error("No refresh token available");
-              callback(new Error("No refresh token available"), null);
-            }
-          }
-        }
+    let session = new CognitoUserSession({
+      IdToken: new CognitoIdToken({ IdToken: idToken }),
+      AccessToken: new CognitoAccessToken({ AccessToken: accessToken }),
+      RefreshToken: new CognitoRefreshToken({ RefreshToken: refreshToken }),
+    });
+
+    const cognitoUser = new CognitoUser({
+      Username: username,
+      Pool: userPool,
+    });
+
+    cognitoUser.setSignInUserSession(session);
+
+    if (!session.isValid()) {
+      try {
+        session = await refreshUserSession(username, refreshToken);
+        cognitoUser.setSignInUserSession(session);
+      } catch (refreshErr) {
+        return callback(
+          new Error("Stored session is invalid or expired and refresh failed"),
+          null
+        );
+      }
+    }
+
+    return callback(null, session);
+  } catch (e) {
+    return callback(e as Error, null);
+  }
+};
+
+export const refreshUserSession = async (
+  username: string,
+  refreshToken: string
+): Promise<CognitoUserSession> => {
+  const cognitoUser = new CognitoUser({
+    Username: username,
+    Pool: userPool,
+  });
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.refreshSession(
+      new CognitoRefreshToken({ RefreshToken: refreshToken }),
+      async (err, session) => {
+        if (err) return reject(err);
+
+        await AsyncStorage.setItem(
+          "cognitoSession",
+          JSON.stringify({
+            username,
+            idToken: session.getIdToken().getJwtToken(),
+            accessToken: session.getAccessToken().getJwtToken(),
+            refreshToken: session.getRefreshToken().getToken(),
+          })
+        );
+        resolve(session);
       }
     );
-  } else {
-    callback(new Error("No current user found"), null);
-  }
+  });
 };
