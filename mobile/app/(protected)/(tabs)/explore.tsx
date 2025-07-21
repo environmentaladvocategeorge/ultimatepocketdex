@@ -23,6 +23,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import CardSetFilterOptionsBottomSheet from "@/components/CardSetFilterOptionsBottomSheet.tsx/CardSetFilterOptionsBottomSheet";
 import { Card as CardType, CardSet, Pokemon } from "@/types/api";
+import * as ImagePicker from "expo-image-picker";
+import { useDeviceCamera } from "@/hooks/useDeviceCamera";
 
 const styles = StyleSheet.create({
   container: {
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
 
 export default function ExploreScreen() {
   const { getToken } = useAuthentication();
+  const { takeImage, isLoading, error } = useDeviceCamera();
   const [cards, setCards] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
@@ -89,7 +92,6 @@ export default function ExploreScreen() {
         }
 
         const token = await getToken();
-        console.log(token);
         const queryParams = new URLSearchParams({
           pageSize: "50",
           page: reset ? "1" : page.toString(),
@@ -188,6 +190,36 @@ export default function ExploreScreen() {
     <Card card={item} onAdd={addCardToUser} />
   );
 
+  const onClickCamera = async () => {
+    try {
+      const formData = await takeImage(true);
+      if (formData) {
+        const token = await getToken();
+
+        const response = await fetch(
+          "https://b3j98olqm3.execute-api.us-east-1.amazonaws.com/dev/search/image",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.log("Image upload error:", errorData);
+          throw new Error(errorData.message || "Failed to upload camera image");
+        }
+
+        const data = await response.json();
+        console.log("Image upload successful:", data);
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+    }
+  };
+
   return (
     <>
       <SearchSortOptionsBottomSheet
@@ -220,6 +252,7 @@ export default function ExploreScreen() {
           value={q}
           onChangeText={setQ}
           placeholder="Search for any card or Pokémon..."
+          onClickCamera={onClickCamera}
         />
         <View style={styles.pillContainer}>
           <ScrollView

@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { colors } from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 const styles = StyleSheet.create({
   container: {
@@ -30,6 +37,15 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingLeft: 8,
   },
+  cameraButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginLeft: 8,
+    backgroundColor: "#4d7cc9",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
 
 interface SearchInputProps {
@@ -41,6 +57,7 @@ interface SearchInputProps {
   onFocus?: () => void;
   onBlur?: () => void;
   onSubmitEditing?: (text: string) => void;
+  onClickCamera?: () => Promise<void>; // assuming it's async
 }
 
 const SearchInput = ({
@@ -52,8 +69,10 @@ const SearchInput = ({
   onFocus,
   onBlur,
   onSubmitEditing,
+  onClickCamera,
 }: SearchInputProps) => {
   const [inputValue, setInputValue] = useState(value);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
 
   useEffect(() => {
     setInputValue(value);
@@ -70,6 +89,19 @@ const SearchInput = ({
   const handleClearInput = () => {
     setInputValue("");
     onChangeText("");
+  };
+
+  const handleCameraClick = async () => {
+    if (!onClickCamera) return;
+
+    try {
+      setIsCameraLoading(true);
+      await onClickCamera();
+    } catch (e) {
+      console.warn("Camera error:", e);
+    } finally {
+      setIsCameraLoading(false);
+    }
   };
 
   return (
@@ -103,6 +135,19 @@ const SearchInput = ({
           </TouchableOpacity>
         )}
       </View>
+      {onClickCamera && (
+        <TouchableOpacity
+          style={styles.cameraButton}
+          onPress={handleCameraClick}
+          disabled={isCameraLoading}
+        >
+          {isCameraLoading ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Ionicons name="camera-outline" size={20} color={colors.white} />
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

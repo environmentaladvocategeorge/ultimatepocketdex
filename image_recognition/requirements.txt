@@ -2,8 +2,9 @@ mangum
 requests
 fastapi
 uvicorn
+python-jose
 pydantic
 jwt
 psycopg2-binary
 sqlalchemy
-python-jose
+python-multipart

@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from fastapi import APIRouter, Query, UploadFile, File
+from fastapi import APIRouter, Query, UploadFile, File, Request, HTTPException
 from fastapi.responses import JSONResponse
 import requests
 from sqlalchemy import desc, asc, func
@@ -153,16 +153,21 @@ def create_search_controller():
                 session.close()
 
     @router.post("/search/image")
-    async def search_by_image(image: UploadFile = File(...)):
+    async def search_by_image(request: Request, image: UploadFile = File(...)):
         try:
             logger.info(f"Received image: {image.filename}")
+
+            auth_header = request.headers.get("Authorization")
+            if auth_header is None:
+                logger.warning("Authorization header missing in the request.")
+                raise HTTPException(status_code=400, detail="Authorization header missing")
 
             IMAGE_RECOGNITION_API_URL = os.environ.get("IMAGE_RECOGNITION_API_URL", "")
 
             embedding_url = f"{IMAGE_RECOGNITION_API_URL}/embedding"
             logger.info(f"Calling embedding endpoint: {embedding_url}")
 
-            response = requests.post(embedding_url)
+            response = requests.post(embedding_url, headers={"Authorization": auth_header}, files={"image": image.file})
             response.raise_for_status()
 
             embedding_result = response.json()
