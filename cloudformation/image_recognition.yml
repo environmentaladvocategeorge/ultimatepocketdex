@@ -35,6 +35,10 @@ Resources:
             - Effect: Allow
               Action:
                 - rds:*
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
+                - kms:Decrypt
               Resource: "*"
       Events:
         GenereateEmbedding:

@@ -164,6 +164,10 @@ def create_search_controller():
 
             IMAGE_RECOGNITION_API_URL = os.environ.get("IMAGE_RECOGNITION_API_URL", "")
 
+            if not IMAGE_RECOGNITION_API_URL:
+                logger.error("IMAGE_RECOGNITION_API_URL environment variable is not set.")
+                raise HTTPException(status_code=500, detail="Image recognition service URL not configured")
+
             embedding_url = f"{IMAGE_RECOGNITION_API_URL}/embedding"
             logger.info(f"Calling embedding endpoint: {embedding_url}")
 
