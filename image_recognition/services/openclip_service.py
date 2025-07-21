@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 class OpenCLIPService:
     def __init__(self):
         ssm = SSMService()
-        token = ssm.get_parameter("upd/dev/hf_token")
+        token = ssm.get_parameter("/upd/dev/hf_token")
         self.api_url = "https://api-inference.huggingface.co/models/openai/clip-vit-base-patch32"
         self.headers = {"Authorization": f"Bearer {token}"}
 
