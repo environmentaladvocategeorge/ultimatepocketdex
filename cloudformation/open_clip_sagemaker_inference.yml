@@ -54,7 +54,7 @@ Resources:
     Properties:
       EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
       ProductionVariants:
-        - ModelName: !Ref OpenClipModel
+        - ModelName: !Sub "openclip-${Environment}"
           VariantName: AllTraffic
           ServerlessConfig:
             MaxConcurrency: 5
