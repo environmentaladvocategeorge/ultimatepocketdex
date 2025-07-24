@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+import boto3
 from fastapi import APIRouter, Query, UploadFile, File, Request, HTTPException
 from fastapi.responses import JSONResponse
 import requests
@@ -157,28 +158,26 @@ def create_search_controller():
         try:
             logger.info(f"Received image: {image.filename}")
 
-            auth_header = request.headers.get("Authorization")
-            if auth_header is None:
-                logger.warning("Authorization header missing in the request.")
-                raise HTTPException(status_code=400, detail="Authorization header missing")
+            image_bytes = await image.read()
 
-            IMAGE_RECOGNITION_API_URL = os.environ.get("IMAGE_RECOGNITION_API_URL", "")
+            sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
+            OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            if not IMAGE_RECOGNITION_API_URL:
-                logger.error("IMAGE_RECOGNITION_API_URL environment variable is not set.")
-                raise HTTPException(status_code=500, detail="Image recognition service URL not configured")
+            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
+            response = sagemaker_runtime.invoke_endpoint(
+                EndpointName=OPENCLIP_ENDPOINT_NAME,
+                ContentType="application/x-image",
+                Body=image_bytes
+            )
 
-            embedding_url = f"{IMAGE_RECOGNITION_API_URL}/embedding"
-            logger.info(f"Calling embedding endpoint: {embedding_url}")
+            result = response["Body"].read().decode("utf-8")
+            logger.info(f"Inference result: {result}")
 
-            response = requests.post(embedding_url, headers={"Authorization": auth_header}, files={"image": image.file})
-            response.raise_for_status()
+            return JSONResponse(content={"inference": result}, status_code=200)
 
-            embedding_result = response.json()
-            logger.info(f"Embedding result: {embedding_result}")
-
-            return JSONResponse(content=embedding_result)
-
+        except HTTPException as he:
+            logger.error(f"HTTP error: {he.detail}")
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in /search/image: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
