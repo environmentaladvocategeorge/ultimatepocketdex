@@ -7,15 +7,12 @@ Parameters:
   Environment:
     Type: String
     Description: Deployment environment (e.g., dev, prod).
-  ResourceBaseIdentifier:
-    Type: String
-    Description: Base name prefix for resources.
 
 Resources:
   SageMakerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${ResourceBaseIdentifier}-sagemaker-exec-role-${Environment}"
+      RoleName: !Sub "openai-clip-sagemaker-exec-role-${Environment}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -41,7 +38,7 @@ Resources:
   OpenClipModel:
     Type: AWS::SageMaker::Model
     Properties:
-      ModelName: !Sub "${ResourceBaseIdentifier}-clip-${Environment}"
+      ModelName: !Sub "openai-clip-model-${Environment}"
       ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
       PrimaryContainer:
         Image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04
@@ -53,9 +50,9 @@ Resources:
     Type: AWS::SageMaker::EndpointConfig
     DependsOn: OpenClipModel
     Properties:
-      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-clip-config-${Environment}"
+      EndpointConfigName: !Sub "openai-clip-config-${Environment}"
       ProductionVariants:
-        - ModelName: !Sub "${ResourceBaseIdentifier}-clip-${Environment}"
+        - ModelName: !Sub "openai-clip-model-${Environment}"
           VariantName: AllTraffic
           ServerlessConfig:
             MaxConcurrency: 5
@@ -64,7 +61,7 @@ Resources:
   OpenClipEndpoint:
     Type: AWS::SageMaker::Endpoint
     Properties:
-      EndpointName: !Sub "${ResourceBaseIdentifier}-clip-endpoint-${Environment}"
+      EndpointName: !Sub "openai-clip-endpoint-${Environment}"
       EndpointConfigName: !Ref OpenClipEndpointConfig
 
 Outputs:

@@ -33,7 +33,7 @@ Resources:
       Location: db.yml
       Parameters:
         Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifie
 
   # OpenClip SageMaker Inference Nested Stack
   OpenClipSageMakerInference:
@@ -42,7 +42,6 @@ Resources:
       Location: open_clip_sagemaker_inference.yml
       Parameters:
         Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
 
   # API Nested Stack
   API:
