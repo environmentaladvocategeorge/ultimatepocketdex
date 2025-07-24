@@ -41,7 +41,7 @@ Resources:
   OpenClipModel:
     Type: AWS::SageMaker::Model
     Properties:
-      ModelName: !Sub "$openclip-${Environment}"
+      ModelName: !Sub "openclip-${Environment}"
       ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
       PrimaryContainer:
         Image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04
