@@ -15,9 +15,6 @@ Parameters:
   CognitoUserPoolClientId:
     Type: String
     Description: "The Client ID for the Cognito User Pool used for authentication."
-  ImageRecognitionApiUrl:
-    Type: String
-    Description: "The URL of the Image Recognition API."
 
 Resources:
   ApiFunction:
@@ -32,7 +29,6 @@ Resources:
           ENV: !Ref Environment
           COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
           COGNITO_APP_CLIENT_ID: !Ref CognitoUserPoolClientId
-          IMAGE_RECOGNITION_API_URL: !Ref ImageRecognitionApiUrl
       Policies:
         - Version: "2012-10-17"
           Statement:

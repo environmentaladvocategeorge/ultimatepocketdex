@@ -33,18 +33,7 @@ Resources:
       Location: db.yml
       Parameters:
         Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
-
-  # Image Recognition Nested Stack
-  ImageRecognition:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: image_recognition.yml
-      Parameters:
-        Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
-        CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
-        CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifie
 
   # OpenClip SageMaker Inference Nested Stack
   OpenClipSageMakerInference:
@@ -65,4 +54,3 @@ Resources:
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
         CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
         CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
-        ImageRecognitionApiUrl: !GetAtt ImageRecognition.Outputs.ImageRecognitionApiUrl
