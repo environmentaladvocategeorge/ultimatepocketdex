@@ -63,6 +63,7 @@ Resources:
 
   OpenClipEndpoint:
     Type: AWS::SageMaker::Endpoint
+    DependsOn: OpenClipEndpointConfig
     Properties:
       EndpointName: !Sub "${ResourceBaseIdentifier}-openclip-endpoint-${Environment}"
       EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
