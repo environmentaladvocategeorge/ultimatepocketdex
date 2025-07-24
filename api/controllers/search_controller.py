@@ -161,7 +161,7 @@ def create_search_controller():
             logger.info(f"Received image: {image.filename}")
 
             image_bytes = await image.read()
-            image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+            image_b64 = "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("utf-8")
             payload = { "inputs": image_b64 }
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
