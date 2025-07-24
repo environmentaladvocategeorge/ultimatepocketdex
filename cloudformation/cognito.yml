@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: SAM Template for creating Cognito User Pool with both V1 and V2 configurations
+Description: SAM Template for creating Cognito User Pool
 
 Parameters:
   Environment:
