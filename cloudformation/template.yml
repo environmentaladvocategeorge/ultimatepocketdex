@@ -42,6 +42,7 @@ Resources:
       Location: open_clip_sagemaker_inference.yml
       Parameters:
         Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
 
   # API Nested Stack
   API:
