@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 from typing import Optional
 import boto3
@@ -159,6 +161,8 @@ def create_search_controller():
             logger.info(f"Received image: {image.filename}")
 
             image_bytes = await image.read()
+            image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+            payload = { "inputs": image_b64 }
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
@@ -166,8 +170,8 @@ def create_search_controller():
             logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="application/x-image",
-                Body=image_bytes
+                ContentType="application/json",
+                Body=json.dumps(payload)
             )
 
             result = response["Body"].read().decode("utf-8")
