@@ -162,7 +162,9 @@ def create_search_controller():
 
             image_bytes = await image.read()
             image_b64 = "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("utf-8")
+            logger.info(f"Base64 sample: {image_b64[:100]}")
             payload = { "inputs": image_b64 }
+            logger.info(f"Payload for SageMaker: {payload}")
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
