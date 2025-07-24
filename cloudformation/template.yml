@@ -33,7 +33,7 @@ Resources:
       Location: db.yml
       Parameters:
         Environment: !Ref Environment
-        ResourceBaseIdentifier: !Ref ResourceBaseIdentifie
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
 
   # OpenClip SageMaker Inference Nested Stack
   OpenClipSageMakerInference:
