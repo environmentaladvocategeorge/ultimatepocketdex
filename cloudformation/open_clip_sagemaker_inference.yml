@@ -71,6 +71,6 @@ Resources:
 Outputs:
   OpenClipEndpointName:
     Description: Name of the SageMaker Serverless Inference Endpoint
-    Value: !Ref OpenClipEndpoint
+    Value: !GetAtt OpenClipEndpoint.EndpointName
     Export:
       Name: !Sub "${ResourceBaseIdentifier}-OpenClipEndpointName-${Environment}"
