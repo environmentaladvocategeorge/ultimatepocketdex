@@ -41,7 +41,7 @@ Resources:
   OpenClipModel:
     Type: AWS::SageMaker::Model
     Properties:
-      ModelName: !Sub "${ResourceBaseIdentifier}-openclip-${Environment}"
+      ModelName: !Sub "${ResourceBaseIdentifier}-clip-${Environment}"
       ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
       PrimaryContainer:
         Image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04
@@ -53,9 +53,9 @@ Resources:
     Type: AWS::SageMaker::EndpointConfig
     DependsOn: OpenClipModel
     Properties:
-      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
+      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-clip-config-${Environment}"
       ProductionVariants:
-        - ModelName: !Sub "${ResourceBaseIdentifier}-openclip-${Environment}"
+        - ModelName: !Sub "${ResourceBaseIdentifier}-clip-${Environment}"
           VariantName: AllTraffic
           ServerlessConfig:
             MaxConcurrency: 5
@@ -64,7 +64,7 @@ Resources:
   OpenClipEndpoint:
     Type: AWS::SageMaker::Endpoint
     Properties:
-      EndpointName: !Sub "${ResourceBaseIdentifier}-openclip-endpoint-${Environment}"
+      EndpointName: !Sub "${ResourceBaseIdentifier}-clip-endpoint-${Environment}"
       EndpointConfigName: !Ref OpenClipEndpointConfig
 
 Outputs:
