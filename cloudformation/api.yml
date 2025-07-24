@@ -39,6 +39,7 @@ Resources:
             - Effect: Allow
               Action:
                 - rds:*
+                - sagemaker:InvokeEndpoint
               Resource: "*"
       Events:
         GetUser:
