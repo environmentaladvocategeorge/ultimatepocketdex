@@ -53,20 +53,20 @@ Resources:
     Type: AWS::SageMaker::EndpointConfig
     DependsOn: OpenClipModel
     Properties:
-      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-v2-${Environment}"
+      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
       ProductionVariants:
         - ModelName: !Sub "${ResourceBaseIdentifier}-openclip-${Environment}"
           VariantName: AllTraffic
           ServerlessConfig:
             MaxConcurrency: 5
-            MemorySizeInMB: 4096
+            MemorySizeInMB: 3072
 
   OpenClipEndpoint:
     Type: AWS::SageMaker::Endpoint
     DependsOn: OpenClipEndpointConfig
     Properties:
       EndpointName: !Sub "${ResourceBaseIdentifier}-openclip-endpoint-${Environment}"
-      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-v2-${Environment}"
+      EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
 
 Outputs:
   OpenClipEndpointName:
