@@ -46,6 +46,15 @@ Resources:
         CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
         CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
 
+  # OpenClip SageMaker Inference Nested Stack
+  OpenClipSageMakerInference:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: open_clip_sagemaker_inference.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+
   # API Nested Stack
   API:
     Type: AWS::Serverless::Application
