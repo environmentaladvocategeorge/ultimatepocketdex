@@ -59,7 +59,7 @@ Resources:
           VariantName: AllTraffic
           ServerlessConfig:
             MaxConcurrency: 5
-            MemorySizeInMB: 2048
+            MemorySizeInMB: 4096
 
   OpenClipEndpoint:
     Type: AWS::SageMaker::Endpoint
