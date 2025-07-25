@@ -155,37 +155,38 @@ def create_search_controller():
             if session: 
                 session.close()
 
-    @router.post("/search/image")
-    async def search_by_image(request: Request, image: UploadFile = File(...)):
-        try:
-            logger.info(f"Received image: {image.filename}")
+@router.post("/search/image")
+async def search_by_image(request: Request, image: UploadFile = File(...)):
+    try:
+        logger.info(f"Received image: {image.filename}")
 
-            image_bytes = await image.read()
-            image_b64 = "data:image/jpeg;base64," + base64.urlsafe_b64encode(image_bytes).decode("utf-8")
-            logger.info(f"Base64 sample: {image_b64[:100]}")
-            payload = { "inputs": image_b64 }
-            logger.info(f"Payload for SageMaker: {payload}")
+        # Read the image bytes directly
+        image_bytes = await image.read()
+        
+        # Set content type manually
+        content_type = "image/jpeg"
 
-            sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
-            OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
+        sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
+        OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
-            response = sagemaker_runtime.invoke_endpoint(
-                EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="application/json",
-                Body=json.dumps(payload)
-            )
+        logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with content type: {content_type}")
+        
+        # Pass the raw image bytes directly with the appropriate content type
+        response = sagemaker_runtime.invoke_endpoint(
+            EndpointName=OPENCLIP_ENDPOINT_NAME,
+            ContentType=content_type,  # Use the image's actual content type
+            Body=image_bytes  # Pass raw bytes instead of JSON
+        )
 
-            result = response["Body"].read().decode("utf-8")
-            logger.info(f"Inference result: {result}")
+        result = response["Body"].read().decode("utf-8")
+        logger.info(f"Inference result: {result}")
 
-            return JSONResponse(content={"inference": result}, status_code=200)
+        return JSONResponse(content={"inference": result}, status_code=200)
 
-        except HTTPException as he:
-            logger.error(f"HTTP error: {he.detail}")
-            raise
-        except Exception as e:
-            logger.error(f"Unexpected error in /search/image: {str(e)}")
-            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
-
+    except HTTPException as he:
+        logger.error(f"HTTP error: {he.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in /search/image: {str(e)}")
+        return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
     return router
