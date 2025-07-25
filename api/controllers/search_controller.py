@@ -166,7 +166,7 @@ def create_search_controller():
             logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="application/x-image",
+                ContentType="image/jpeg",
                 Body=image_bytes
             )
 
