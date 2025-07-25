@@ -274,6 +274,82 @@ def create_search_controller():
                 logger.error(error_msg_3)
                 errors.append(error_msg_3)
             
+            # Solution 4: Try with pixel_values key (what CLIP model expects)
+            try:
+                logger.info("Attempting Solution 4: Using pixel_values key")
+                payload_4 = {
+                    "inputs": {
+                        "pixel_values": base64_image
+                    }
+                }
+                
+                response = sagemaker_runtime.invoke_endpoint(
+                    EndpointName=OPENCLIP_ENDPOINT_NAME,
+                    ContentType="application/json",
+                    Body=json.dumps(payload_4)
+                )
+                
+                raw_result = response["Body"].read()
+                logger.info(f"Solution 4 - SageMaker raw response: {raw_result}")
+                
+                result = json.loads(raw_result.decode("utf-8"))
+                logger.info("Solution 4 succeeded!")
+                return JSONResponse(content={"embeddings": result}, status_code=200)
+                
+            except Exception as e4:
+                error_msg_4 = f"Solution 4 failed: {str(e4)}"
+                logger.error(error_msg_4)
+                errors.append(error_msg_4)
+            
+            # Solution 5: Try multimodal format (both image and text inputs)
+            try:
+                logger.info("Attempting Solution 5: Multimodal format")
+                payload_5 = {
+                    "inputs": {
+                        "text": [""],  # Empty text for image-only feature extraction
+                        "images": [base64_image]
+                    }
+                }
+                
+                response = sagemaker_runtime.invoke_endpoint(
+                    EndpointName=OPENCLIP_ENDPOINT_NAME,
+                    ContentType="application/json",
+                    Body=json.dumps(payload_5)
+                )
+                
+                raw_result = response["Body"].read()
+                logger.info(f"Solution 5 - SageMaker raw response: {raw_result}")
+                
+                result = json.loads(raw_result.decode("utf-8"))
+                logger.info("Solution 5 succeeded!")
+                return JSONResponse(content={"embeddings": result}, status_code=200)
+                
+            except Exception as e5:
+                error_msg_5 = f"Solution 5 failed: {str(e5)}"
+                logger.error(error_msg_5)
+                errors.append(error_msg_5)
+            
+            # Solution 6: Try raw binary data with different content type
+            try:
+                logger.info("Attempting Solution 6: Raw binary data")
+                response = sagemaker_runtime.invoke_endpoint(
+                    EndpointName=OPENCLIP_ENDPOINT_NAME,
+                    ContentType="image/jpeg",
+                    Body=image_bytes
+                )
+                
+                raw_result = response["Body"].read()
+                logger.info(f"Solution 6 - SageMaker raw response: {raw_result}")
+                
+                result = json.loads(raw_result.decode("utf-8"))
+                logger.info("Solution 6 succeeded!")
+                return JSONResponse(content={"embeddings": result}, status_code=200)
+                
+            except Exception as e6:
+                error_msg_6 = f"Solution 6 failed: {str(e6)}"
+                logger.error(error_msg_6)
+                errors.append(error_msg_6)
+            
             # If all solutions fail, return aggregated errors
             logger.error("All solutions failed. Aggregated errors:")
             for i, error in enumerate(errors, 1):
@@ -287,7 +363,10 @@ def create_search_controller():
                     "attempted_solutions": [
                         "Nested inputs format: {'inputs': {'image': base64_image}}",
                         "Simple inputs with parameters: {'inputs': base64_image, 'parameters': {'task': 'feature-extraction'}}",
-                        "Preprocessed RGB image: {'inputs': 'data:image/jpeg;base64,processed_image'}"
+                        "Preprocessed RGB image: {'inputs': 'data:image/jpeg;base64,processed_image'}",
+                        "Pixel values format: {'inputs': {'pixel_values': base64_image}}",
+                        "Multimodal format: {'inputs': {'text': [''], 'images': [base64_image]}}",
+                        "Raw binary data with image/jpeg content type"
                     ]
                 }
             )
