@@ -1,34 +1,52 @@
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from "expo-image-manipulator";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 type UseDeviceCameraResult = {
-  takeImage: (compress?: boolean) => Promise<FormData | null>;
+  takeImage: () => Promise<string | null>; // Returns Base64
   isLoading: boolean;
   error: string | null;
 };
 
-export function useDeviceCamera(): UseDeviceCameraResult {
+type CompressionOptions = {
+  quality?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  format?: SaveFormat;
+};
+
+export function useDeviceCamera(
+  compressionOptions: CompressionOptions = {}
+): UseDeviceCameraResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const compressImage = async (uri: string) => {
+  const {
+    quality = 0.7, // Reduce quality to 70%
+    maxWidth = 1920,
+    maxHeight = 1080,
+    format = SaveFormat.JPEG,
+  } = compressionOptions;
+
+  const compressImage = async (uri: string): Promise<string | null> => {
     try {
-      const result = await ImageManipulator.manipulateAsync(
+      const manipulatedImage = await manipulateAsync(
         uri,
-        [{ resize: { width: 800 } }],
+        [{ resize: { width: maxWidth, height: maxHeight } }],
         {
-          compress: 0.5,
-          format: ImageManipulator.SaveFormat.JPEG,
+          compress: quality,
+          format,
+          base64: true, // Return Base64
         }
       );
-      return result.uri;
-    } catch (e) {
-      throw new Error("Failed to compress image");
+      return manipulatedImage.base64 || null;
+    } catch (error) {
+      console.warn("Image compression failed:", error);
+      return null;
     }
   };
 
-  const takeImage = async (compress = true): Promise<FormData | null> => {
+  const takeImage = async (): Promise<string | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -43,7 +61,7 @@ export function useDeviceCamera(): UseDeviceCameraResult {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: "images",
         allowsEditing: false,
-        quality: 1,
+        quality: 0.8,
       });
 
       if (result.canceled || !result.assets?.length) {
@@ -51,20 +69,8 @@ export function useDeviceCamera(): UseDeviceCameraResult {
       }
 
       const image = result.assets[0];
-      const uri = compress ? await compressImage(image.uri) : image.uri;
-
-      const filename = uri.split("/").pop() || "upload.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image";
-
-      const formData = new FormData();
-      formData.append("image", {
-        uri,
-        name: filename,
-        type,
-      } as any);
-
-      return formData;
+      const base64 = await compressImage(image.uri);
+      return base64 ? `data:image/jpeg;base64,${base64}` : null;
     } catch (e: any) {
       setError(e?.message || "Unexpected error while taking image");
       return null;

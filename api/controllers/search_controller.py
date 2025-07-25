@@ -1,7 +1,9 @@
+import base64
 import os
+import re
 from typing import Optional
 import boto3
-from fastapi import APIRouter, Query, UploadFile, File, Request, HTTPException
+from fastapi import APIRouter, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import desc, asc, func
 from sqlalchemy.orm import joinedload, aliased
@@ -155,25 +157,35 @@ def create_search_controller():
                 session.close()
 
     @router.post("/search/image")
-    async def search_by_image(request: Request, image: UploadFile = File(...)):
+    async def search_by_image(request: Request):
         try:
-            logger.info(f"Received image: {image.filename}")
+            data = await request.json()
+            base64_image = data.get("image")
 
-            image_bytes = await image.read()
+            if not base64_image:
+                return JSONResponse(status_code=400, content={"message": "No image data provided."})
+            
+            base64_str = re.sub(r"^data:image/\w+;base64,", "", base64_image)
 
+            try:
+                image_bytes = base64.b64decode(base64_str)
+            except Exception as decode_err:
+                logger.error(f"Failed to decode base64 image: {decode_err}")
+                return JSONResponse(status_code=400, content={"message": "Invalid base64 image data."})
+            
             try:
                 Image.open(io.BytesIO(image_bytes)).verify()
             except Exception as img_err:
-                logger.error(f"Uploaded file is not a valid image: {img_err}")
-                return JSONResponse(status_code=400, content={"message": "Uploaded file is not a valid image."})
+                logger.error(f"Uploaded base64 is not a valid image: {img_err}")
+                return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with content type {image.content_type}")
+            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with base64 image")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType=image.content_type,
+                ContentType="image/jpeg",
                 Body=image_bytes
             )
 

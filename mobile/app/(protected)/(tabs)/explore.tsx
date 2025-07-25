@@ -192,8 +192,8 @@ export default function ExploreScreen() {
 
   const onClickCamera = async () => {
     try {
-      const formData = await takeImage(true);
-      if (formData) {
+      const base64Image = await takeImage(); // Now returns base64 string
+      if (base64Image) {
         const token = await getToken();
 
         const response = await fetch(
@@ -202,10 +202,12 @@ export default function ExploreScreen() {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-            body: formData,
+            body: JSON.stringify({ image: base64Image }),
           }
         );
+
         if (!response.ok) {
           const errorData = await response.json();
           console.log("Image upload error:", errorData);
