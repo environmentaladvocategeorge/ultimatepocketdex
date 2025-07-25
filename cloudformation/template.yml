@@ -35,7 +35,7 @@ Resources:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
 
-  # OpenClip SageMaker Inference Nested Stack
+  # SageMaker Clip Inference Nested Stack
   SMClipInferenceEndpoint:
     Type: AWS::Serverless::Application
     Properties:
@@ -54,4 +54,4 @@ Resources:
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
         CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
         CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
-        OpenClipEndpointName: !GetAtt OpenClipInferenceEndpoint.Outputs.OpenClipEndpointName
+        OpenClipEndpointName: !GetAtt SMClipInferenceEndpoint.Outputs.OpenClipEndpointName
