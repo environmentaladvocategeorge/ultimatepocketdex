@@ -36,10 +36,10 @@ Resources:
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
 
   # OpenClip SageMaker Inference Nested Stack
-  OpenClipInferenceEndpoint:
+  SMClipInferenceEndpoint:
     Type: AWS::Serverless::Application
     Properties:
-      Location: open_clip_sagemaker_inference.yml
+      Location: clip_sagemaker_inference.yml
       Parameters:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
