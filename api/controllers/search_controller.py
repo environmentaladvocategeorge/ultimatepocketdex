@@ -1,7 +1,5 @@
-import json
 import os
 from typing import Optional
-import uuid
 import boto3
 from fastapi import APIRouter, Query, UploadFile, File, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -162,36 +160,14 @@ def create_search_controller():
 
             image_bytes = await image.read()
 
-            s3_client = boto3.client("s3", region_name="us-east-1")
-            bucket_name = "ultimatepocketdex-openclip-image-dev"
-            image_key = f"{uuid.uuid4()}_{image.filename}"
-
-            logger.info(f"Uploading image to S3: {bucket_name}/{image_key}")
-            s3_client.put_object(
-                Bucket=bucket_name,
-                Key=image_key,
-                Body=image_bytes,
-                ContentType=image.content_type
-            )
-
-
-            presigned_url = s3_client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": bucket_name, "Key": image_key},
-                ExpiresIn=30
-            )
-            logger.info(f"Generated pre-signed URL: {presigned_url}")
-
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            payload = {"inputs": presigned_url}
-            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with payload: {payload}")
-
+            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="application/json",
-                Body=json.dumps(payload)
+                ContentType="application/x-image",
+                Body=image_bytes
             )
 
             result = response["Body"].read().decode("utf-8")
