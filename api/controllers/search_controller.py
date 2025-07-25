@@ -163,8 +163,8 @@ def create_search_controller():
             image_bytes = await image.read()
 
             s3_client = boto3.client("s3", region_name="us-east-1")
-            bucket_name = os.environ.get("DATA_BUCKET_NAME")
-            image_key = f"uploads/{uuid.uuid4()}_{image.filename}"
+            bucket_name = "ultimatepocketdex-openclip-image-dev"
+            image_key = f"{uuid.uuid4()}_{image.filename}"
 
             logger.info(f"Uploading image to S3: {bucket_name}/{image_key}")
             s3_client.put_object(
