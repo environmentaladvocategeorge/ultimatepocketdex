@@ -174,13 +174,18 @@ def create_search_controller():
                 ContentType=image.content_type
             )
 
-            s3_uri = f"s3://{bucket_name}/{image_key}"
-            logger.info(f"Image uploaded to {s3_uri}")
+
+            presigned_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket_name, "Key": image_key},
+                ExpiresIn=30
+            )
+            logger.info(f"Generated pre-signed URL: {presigned_url}")
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            payload = {"inputs": s3_uri}
+            payload = {"inputs": presigned_url}
             logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with payload: {payload}")
 
             response = sagemaker_runtime.invoke_endpoint(
