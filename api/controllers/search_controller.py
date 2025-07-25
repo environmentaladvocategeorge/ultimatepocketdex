@@ -163,10 +163,10 @@ def create_search_controller():
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME}")
+            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with content type {image.content_type}")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="image/jpeg",
+                ContentType=image.content_type,
                 Body=image_bytes
             )
 
