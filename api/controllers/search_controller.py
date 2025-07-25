@@ -180,196 +180,26 @@ def create_search_controller():
                 logger.error(f"Uploaded base64 is not a valid image: {img_err}")
                 return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
+            # Send raw image bytes to SageMaker endpoint
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
-            
-            errors = []
-            
-            # Solution 1: Try sending as nested inputs
-            try:
-                logger.info("Attempting Solution 1: Nested inputs format")
-                payload_1 = {
-                    "inputs": {
-                        "image": base64_image
-                    }
-                }
-                
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="application/json",
-                    Body=json.dumps(payload_1)
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 1 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 1 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e1:
-                error_msg_1 = f"Solution 1 failed: {str(e1)}"
-                logger.error(error_msg_1)
-                errors.append(error_msg_1)
-            
-            # Solution 2: Try simple inputs with parameters
-            try:
-                logger.info("Attempting Solution 2: Simple inputs with parameters")
-                payload_2 = {
-                    "inputs": base64_image,
-                    "parameters": {
-                        "task": "feature-extraction"
-                    }
-                }
-                
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="application/json",
-                    Body=json.dumps(payload_2)
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 2 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 2 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e2:
-                error_msg_2 = f"Solution 2 failed: {str(e2)}"
-                logger.error(error_msg_2)
-                errors.append(error_msg_2)
-            
-            # Solution 3: Try preprocessing the image
-            try:
-                logger.info("Attempting Solution 3: Preprocessed image")
-                image = Image.open(io.BytesIO(image_bytes))
-                if image.mode != 'RGB':
-                    image = image.convert('RGB')
-                
-                # Convert PIL image back to base64
-                buffered = io.BytesIO()
-                image.save(buffered, format="JPEG")
-                processed_image_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                
-                payload_3 = {
-                    "inputs": f"data:image/jpeg;base64,{processed_image_b64}"
-                }
-                
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="application/json",
-                    Body=json.dumps(payload_3)
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 3 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 3 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e3:
-                error_msg_3 = f"Solution 3 failed: {str(e3)}"
-                logger.error(error_msg_3)
-                errors.append(error_msg_3)
-            
-            # Solution 4: Try with pixel_values key (what CLIP model expects)
-            try:
-                logger.info("Attempting Solution 4: Using pixel_values key")
-                payload_4 = {
-                    "inputs": {
-                        "pixel_values": base64_image
-                    }
-                }
-                
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="application/json",
-                    Body=json.dumps(payload_4)
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 4 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 4 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e4:
-                error_msg_4 = f"Solution 4 failed: {str(e4)}"
-                logger.error(error_msg_4)
-                errors.append(error_msg_4)
-            
-            # Solution 5: Try multimodal format (both image and text inputs)
-            try:
-                logger.info("Attempting Solution 5: Multimodal format")
-                payload_5 = {
-                    "inputs": {
-                        "text": [""],  # Empty text for image-only feature extraction
-                        "images": [base64_image]
-                    }
-                }
-                
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="application/json",
-                    Body=json.dumps(payload_5)
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 5 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 5 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e5:
-                error_msg_5 = f"Solution 5 failed: {str(e5)}"
-                logger.error(error_msg_5)
-                errors.append(error_msg_5)
-            
-            # Solution 6: Try raw binary data with different content type
-            try:
-                logger.info("Attempting Solution 6: Raw binary data")
-                response = sagemaker_runtime.invoke_endpoint(
-                    EndpointName=OPENCLIP_ENDPOINT_NAME,
-                    ContentType="image/jpeg",
-                    Body=image_bytes
-                )
-                
-                raw_result = response["Body"].read()
-                logger.info(f"Solution 6 - SageMaker raw response: {raw_result}")
-                
-                result = json.loads(raw_result.decode("utf-8"))
-                logger.info("Solution 6 succeeded!")
-                return JSONResponse(content={"embeddings": result}, status_code=200)
-                
-            except Exception as e6:
-                error_msg_6 = f"Solution 6 failed: {str(e6)}"
-                logger.error(error_msg_6)
-                errors.append(error_msg_6)
-            
-            # If all solutions fail, return aggregated errors
-            logger.error("All solutions failed. Aggregated errors:")
-            for i, error in enumerate(errors, 1):
-                logger.error(f"  {i}. {error}")
-            
-            return JSONResponse(
-                status_code=500, 
-                content={
-                    "message": "All image processing solutions failed",
-                    "errors": errors,
-                    "attempted_solutions": [
-                        "Nested inputs format: {'inputs': {'image': base64_image}}",
-                        "Simple inputs with parameters: {'inputs': base64_image, 'parameters': {'task': 'feature-extraction'}}",
-                        "Preprocessed RGB image: {'inputs': 'data:image/jpeg;base64,processed_image'}",
-                        "Pixel values format: {'inputs': {'pixel_values': base64_image}}",
-                        "Multimodal format: {'inputs': {'text': [''], 'images': [base64_image]}}",
-                        "Raw binary data with image/jpeg content type"
-                    ]
-                }
+
+            response = sagemaker_runtime.invoke_endpoint(
+                EndpointName=OPENCLIP_ENDPOINT_NAME,
+                ContentType="application/x-image",  # or "application/octet-stream" if required by your endpoint
+                Body=image_bytes
             )
+            
+            raw_result = response["Body"].read()
+            logger.info(f"SageMaker raw response: {raw_result}")
+            
+            try:
+                result = json.loads(raw_result.decode("utf-8"))
+            except json.JSONDecodeError as json_err:
+                logger.error(f"Failed to parse SageMaker response as JSON: {json_err}")
+                return JSONResponse(status_code=500, content={"message": "Invalid response from model"})
+
+            return JSONResponse(content={"embeddings": result}, status_code=200)
 
         except HTTPException as he:
             logger.error(f"HTTP error: {he.detail}")
