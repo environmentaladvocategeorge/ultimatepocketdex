@@ -3,7 +3,6 @@ from typing import Optional
 import boto3
 from fastapi import APIRouter, Query, UploadFile, File, Request, HTTPException
 from fastapi.responses import JSONResponse
-import requests
 from sqlalchemy import desc, asc, func
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import or_
@@ -16,6 +15,8 @@ from alchemy_models.card_set import CardSet
 from utils.logger import get_logger
 from pydantic import BaseModel
 from enum import Enum
+from PIL import Image
+import io
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -159,6 +160,12 @@ def create_search_controller():
             logger.info(f"Received image: {image.filename}")
 
             image_bytes = await image.read()
+
+            try:
+                Image.open(io.BytesIO(image_bytes)).verify()
+            except Exception as img_err:
+                logger.error(f"Uploaded file is not a valid image: {img_err}")
+                return JSONResponse(status_code=400, content={"message": "Uploaded file is not a valid image."})
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
