@@ -184,7 +184,7 @@ def create_search_controller():
                 return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
             # Encode image bytes again to base64 for SageMaker if required
-            encoded_body = base64.b64encode(image_bytes)
+            payload = {"inputs": base64_image}
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
@@ -192,9 +192,10 @@ def create_search_controller():
             logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with base64 body (length {len(encoded_body)} bytes)")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
-                ContentType="application/octet-stream",  # Valid binary content type
-                Body=encoded_body
+                ContentType="application/json",
+                Body=json.dumps(payload)
             )
+            
 
             raw_result = response["Body"].read()
             logger.info(f"SageMaker raw response: {raw_result}")
