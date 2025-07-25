@@ -18,6 +18,9 @@ Parameters:
   OpenClipEndpointName:
     Type: String
     Description: "Name of the OpenClip SageMaker Endpoint"
+  OpenClipImageBucketArn:
+    Type: String
+    Description: "The ARN of the OpenClip S3 bucket."
 
 Resources:
   ApiFunction:
@@ -41,6 +44,11 @@ Resources:
                 - rds:*
                 - sagemaker:InvokeEndpoint
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+              Resource: !Sub "${OpenClipImageBucketArn}/*"
       Events:
         GetUser:
           Type: Api

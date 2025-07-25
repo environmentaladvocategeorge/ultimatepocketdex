@@ -17,6 +17,15 @@ Parameters:
     Description: "ARN of the IAM role for deployment."
 
 Resources:
+  # S3 Nested Stack
+  S3:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: s3.yml
+      Parameters:
+        Environment: !Ref Environment
+        ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+
   # Cognito Nested Stack
   Cognito:
     Type: AWS::Serverless::Application
@@ -43,6 +52,7 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        OpenClipImageBucketArn: !GetAtt S3.Outputs.OpenClipImageBucketArn
 
   # API Nested Stack
   API:
@@ -55,3 +65,4 @@ Resources:
         CognitoUserPoolId: !GetAtt Cognito.Outputs.CognitoUserPoolId
         CognitoUserPoolClientId: !GetAtt Cognito.Outputs.CognitoUserPoolClientId
         OpenClipEndpointName: !GetAtt OpenClipInferenceEndpoint.Outputs.OpenClipEndpointName
+        OpenClipImageBucketArn: !GetAtt S3.Outputs.OpenClipImageBucketArn

@@ -10,6 +10,9 @@ Parameters:
   ResourceBaseIdentifier:
     Type: String
     Description: Base name prefix for resources.
+  OpenClipImageBucketArn:
+    Type: String
+    Description: "The ARN of the OpenClip S3 bucket."
 
 Resources:
   SageMakerExecutionRole:
@@ -37,6 +40,10 @@ Resources:
                   - ecr:BatchGetImage
                   - ecr:BatchCheckLayerAvailability
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "${OpenClipImageBucketArn}/*"
 
   OpenClipModel:
     Type: AWS::SageMaker::Model

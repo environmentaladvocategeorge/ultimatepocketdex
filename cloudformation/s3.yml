@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for Provisioning S3 Resources
+
+Parameters:
+  Environment:
+    Type: String
+    Description: "Deployment environment (e.g., dev, prod)."
+  ResourceBaseIdentifier:
+    Type: String
+    Description: "Base identifier for resource naming."
+
+Resources:
+  OpenClipImageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ResourceBaseIdentifier}-openclip-image-${Environment}"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  OpenClipImageBucketName:
+    Description: "The name of the OpenCLIP image S3 bucket"
+    Value: !Ref OpenClipImageBucket
+    Export:
+      Name: !Sub "${ResourceBaseIdentifier}-OpenClipImageBucketName-${Environment}"
+
+  OpenClipImageBucketArn:
+    Description: "The ARN of the OpenCLIP image S3 bucket"
+    Value: !GetAtt OpenClipImageBucket.Arn
+    Export:
+      Name: !Sub "${ResourceBaseIdentifier}-OpenClipImageBucketArn-${Environment}"
