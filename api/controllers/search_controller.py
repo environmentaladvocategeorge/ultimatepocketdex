@@ -156,8 +156,7 @@ def create_search_controller():
         finally:
             if session: 
                 session.close()
-
-
+                
     @router.post("/search/image")
     async def search_by_image(request: Request):
         try:
@@ -167,6 +166,7 @@ def create_search_controller():
             if not base64_image:
                 return JSONResponse(status_code=400, content={"message": "No image data provided."})
             
+            # Remove any data URL prefix
             base64_str = re.sub(r"^data:image/\w+;base64,", "", base64_image)
 
             try:
@@ -181,112 +181,26 @@ def create_search_controller():
                 logger.error(f"Uploaded base64 is not a valid image: {img_err}")
                 return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
-            # Initialize SageMaker client
+            # Send raw image bytes to SageMaker with content type hardcoded to image/jpeg
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            # Try multiple approaches in sequence
-            approaches = [
-                {
-                    "name": "JSON with inputs key",
-                    "content_type": "application/json",
-                    "body": json.dumps({"inputs": base64_str})
-                },
-                {
-                    "name": "JSON with nested image",
-                    "content_type": "application/json", 
-                    "body": json.dumps({"inputs": {"image": base64_str}})
-                },
-                {
-                    "name": "JSON with direct image key",
-                    "content_type": "application/json",
-                    "body": json.dumps({"image": base64_str})
-                },
-                {
-                    "name": "Raw base64 string as JSON",
-                    "content_type": "application/json",
-                    "body": json.dumps(base64_str)
-                },
-                {
-                    "name": "Raw image bytes with octet-stream",
-                    "content_type": "application/octet-stream",
-                    "body": image_bytes
-                },
-                {
-                    "name": "Raw image bytes with x-image",
-                    "content_type": "application/x-image",
-                    "body": image_bytes
-                }
-            ]
+            response = sagemaker_runtime.invoke_endpoint(
+                EndpointName=OPENCLIP_ENDPOINT_NAME,
+                ContentType="image/jpeg",
+                Body=image_bytes
+            )
+            
+            raw_result = response["Body"].read()
+            logger.info(f"SageMaker raw response: {raw_result}")
+            
+            try:
+                result = json.loads(raw_result.decode("utf-8"))
+            except json.JSONDecodeError as json_err:
+                logger.error(f"Failed to parse SageMaker response as JSON: {json_err}")
+                return JSONResponse(status_code=500, content={"message": "Invalid response from model"})
 
-            results = []
-            successful_result = None
-
-            for i, approach in enumerate(approaches, 1):
-                logger.info(f"Attempting approach {i}: {approach['name']}")
-                
-                try:
-                    response = sagemaker_runtime.invoke_endpoint(
-                        EndpointName=OPENCLIP_ENDPOINT_NAME,
-                        ContentType=approach["content_type"],
-                        Body=approach["body"]
-                    )
-                    
-                    raw_result = response["Body"].read()
-                    logger.info(f"Approach {i} ({approach['name']}) - Raw response length: {len(raw_result)}")
-                    
-                    try:
-                        result = json.loads(raw_result.decode("utf-8"))
-                        logger.info(f"Approach {i} ({approach['name']}) - SUCCESS: {result}")
-                        results.append({
-                            "approach": approach["name"],
-                            "status": "success",
-                            "response": result
-                        })
-                        
-                        # If this is the first successful approach, save it
-                        if successful_result is None:
-                            successful_result = result
-                            
-                    except json.JSONDecodeError as json_err:
-                        logger.warning(f"Approach {i} ({approach['name']}) - JSON decode error: {json_err}")
-                        logger.info(f"Raw response was: {raw_result[:500]}...")  # Log first 500 chars
-                        results.append({
-                            "approach": approach["name"],
-                            "status": "json_decode_error",
-                            "error": str(json_err),
-                            "raw_response_preview": raw_result.decode("utf-8", errors="ignore")[:200]
-                        })
-                        
-                except Exception as e:
-                    logger.error(f"Approach {i} ({approach['name']}) - Failed: {str(e)}")
-                    results.append({
-                        "approach": approach["name"],
-                        "status": "failed",
-                        "error": str(e)
-                    })
-
-            # Log summary of all attempts
-            logger.info("=== SUMMARY OF ALL APPROACHES ===")
-            for result in results:
-                if result["status"] == "success":
-                    logger.info(f"✅ {result['approach']}: SUCCESS")
-                elif result["status"] == "json_decode_error":
-                    logger.info(f"⚠️  {result['approach']}: Got response but JSON decode failed")
-                else:
-                    logger.info(f"❌ {result['approach']}: {result['error']}")
-
-            # Return the first successful result, or error details if all failed
-            if successful_result:
-                return JSONResponse(content={"embeddings": successful_result}, status_code=200)
-            else:
-                return JSONResponse(
-                    status_code=500, 
-                    content={
-                        "message": "All approaches failed",
-                        "attempts": results
-                    }
-                )
+            return JSONResponse(content={"embeddings": result}, status_code=200)
 
         except HTTPException as he:
             logger.error(f"HTTP error: {he.detail}")
