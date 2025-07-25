@@ -160,14 +160,12 @@ def create_search_controller():
     @router.post("/search/image")
     async def search_by_image(request: Request):
         try:
-            # Parse incoming JSON
             data = await request.json()
             base64_image = data.get("image")
 
             if not base64_image:
                 return JSONResponse(status_code=400, content={"message": "No image data provided."})
             
-            # Remove data URI prefix if present
             base64_str = re.sub(r"^data:image/\w+;base64,", "", base64_image)
 
             try:
@@ -176,20 +174,17 @@ def create_search_controller():
                 logger.error(f"Failed to decode base64 image: {decode_err}")
                 return JSONResponse(status_code=400, content={"message": "Invalid base64 image data."})
             
-            # Verify that the decoded data is a valid image
             try:
                 Image.open(io.BytesIO(image_bytes)).verify()
             except Exception as img_err:
                 logger.error(f"Uploaded base64 is not a valid image: {img_err}")
                 return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
-            # Encode image bytes again to base64 for SageMaker if required
             payload = {"inputs": base64_image}
 
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
             OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
 
-            logger.info(f"Invoking SageMaker endpoint: {OPENCLIP_ENDPOINT_NAME} with base64 body (length {len(encoded_body)} bytes)")
             response = sagemaker_runtime.invoke_endpoint(
                 EndpointName=OPENCLIP_ENDPOINT_NAME,
                 ContentType="application/json",
