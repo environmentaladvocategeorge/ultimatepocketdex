@@ -10,6 +10,9 @@ Parameters:
   ResourceBaseIdentifier:
     Type: String
     Description: Base name prefix for resources.
+  ModelBucketName:
+    Type: String
+    Description: "The S3 bucket containing the OpenCLIP model artifact."
 
 Resources:
   SageMakerExecutionRole:
@@ -37,6 +40,10 @@ Resources:
                   - ecr:BatchGetImage
                   - ecr:BatchCheckLayerAvailability
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${ModelBucketName}/*"
 
   OpenClipModel:
     Type: AWS::SageMaker::Model
@@ -45,6 +52,7 @@ Resources:
       ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
       PrimaryContainer:
         Image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04
+        ModelDataUrl: !Sub "s3://${ModelBucketName}/model.tar.gz"
         Environment:
           HF_MODEL_ID: "openai/clip-vit-base-patch32"
           HF_TASK: "feature-extraction"

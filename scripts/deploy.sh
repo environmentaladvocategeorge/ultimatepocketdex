@@ -6,6 +6,7 @@ ENVIRONMENT=$3
 RESOURCE_BASE_IDENTIFIER="ultimatepocketdex"
 STACK_NAME="${RESOURCE_BASE_IDENTIFIER}-${ENVIRONMENT}"
 REGION="us-east-1"
+MODEL_BUCKET_NAME="ultimatepocketdex-openclip-model-${ENVIRONMENT}"
 
 STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].StackStatus" --output text || echo "NOT_FOUND")
 
@@ -24,7 +25,11 @@ echo "Deploying SAM application..."
 sam deploy \
   --template-file packaged.yaml \
   --stack-name $STACK_NAME \
-  --parameter-overrides Environment=${ENVIRONMENT} DeploymentRoleARN=${ASSUMED_ROLE_ARN} ResourceBaseIdentifier=${RESOURCE_BASE_IDENTIFIER} \
+  --parameter-overrides \
+    Environment=${ENVIRONMENT} \
+    DeploymentRoleARN=${ASSUMED_ROLE_ARN} \
+    ResourceBaseIdentifier=${RESOURCE_BASE_IDENTIFIER} \
+    ModelBucketName=${MODEL_BUCKET_NAME} \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
   --region $REGION
 

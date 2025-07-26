@@ -15,6 +15,9 @@ Parameters:
   DeploymentRoleARN:
     Type: String
     Description: "ARN of the IAM role for deployment."
+  ModelBucketName:
+    Type: String
+    Description: "The S3 bucket containing the OpenCLIP model artifact."
 
 Resources:
   # Cognito Nested Stack
@@ -43,6 +46,7 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ResourceBaseIdentifier: !Ref ResourceBaseIdentifier
+        ModelBucketName: !Ref ModelBucketName
 
   # API Nested Stack
   API:

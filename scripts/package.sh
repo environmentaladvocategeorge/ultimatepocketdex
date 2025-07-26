@@ -6,9 +6,12 @@ ROLE_ARN="$1"
 ACCOUNT_ID="$2"
 ENVIRONMENT="$3"
 BUCKET_NAME="ultimatepocketdex-sam-${ENVIRONMENT}"
+MODEL_BUCKET_NAME="ultimatepocketdex-openclip-model-${ENVIRONMENT}"
 REGION="us-east-1"
 
-# Bucket creation logic
+# -------------------------------
+# Ensure SAM bucket exists
+# -------------------------------
 if ! aws s3api head-bucket --bucket $BUCKET_NAME 2>/dev/null; then
   echo "Bucket does not exist. Creating bucket: $BUCKET_NAME"
   aws s3api create-bucket --bucket $BUCKET_NAME --region $REGION
@@ -44,7 +47,30 @@ else
   echo "Bucket already exists: $BUCKET_NAME"
 fi
 
+# -------------------------------
+# Ensure Model bucket exists
+# -------------------------------
+if ! aws s3api head-bucket --bucket $MODEL_BUCKET_NAME 2>/dev/null; then
+  echo "Model bucket does not exist. Creating bucket: $MODEL_BUCKET_NAME"
+  aws s3api create-bucket --bucket $MODEL_BUCKET_NAME --region $REGION
+else
+  echo "Model bucket already exists: $MODEL_BUCKET_NAME"
+fi
+
+# -------------------------------
+# Package and upload model
+# -------------------------------
+echo "Packaging CLIP model..."
+cd clip_model
+tar czvf model.tar.gz code
+cd ..
+
+echo "Uploading model to S3..."
+aws s3 cp clip_model/model.tar.gz s3://$MODEL_BUCKET_NAME/model.tar.gz
+
+# -------------------------------
 # Build the SAM application
+# -------------------------------
 echo "Building SAM application..."
 if sam build --template-file cloudformation/template.yml; then
   echo "SAM application built successfully."
@@ -53,7 +79,9 @@ else
   exit 1
 fi
 
+# -------------------------------
 # Package the SAM application
+# -------------------------------
 echo "Packaging SAM application..."
 if sam package \
   --output-template-file packaged.yaml \
