@@ -18,11 +18,6 @@ class SageMakerService:
             raise ValueError("SAGEMAKER_ENDPOINT environment variable is not set.")
 
     def get_image_embeddings(self, base64_image: str):
-        """
-        Takes a base64 encoded image string, validates it, 
-        and requests embeddings from the SageMaker inference endpoint.
-        Returns a list or dict of embeddings from the model response.
-        """
         if not base64_image:
             logger.error("No image data provided.")
             raise ValueError("No image data provided.")
@@ -42,13 +37,14 @@ class SageMakerService:
             raise ValueError("Uploaded data is not a valid image.")
         
         try:
+            logger.info(f"Sending {len(image_bytes)} bytes to SageMaker endpoint '{self.endpoint_name}'.")
             response = self.sagemaker_runtime.invoke_endpoint(
                 EndpointName=self.endpoint_name,
                 ContentType="image/jpeg",
                 Body=image_bytes
             )
             raw_result = response["Body"].read()
-            logger.info(f"SageMaker raw response: {raw_result}")
+            logger.info(f"Received SageMaker response ({len(raw_result)} bytes).")
 
             try:
                 result = json.loads(raw_result.decode("utf-8"))

@@ -20,12 +20,6 @@ class CognitoService:
         )
 
     def get_cognito_public_keys(self) -> list[dict[str, Any]]:
-        """
-        Fetches Cognito public keys used to validate JWT tokens.
-
-        Returns:
-            List[Dict[str, Any]]: A list of public keys retrieved from Cognito.
-        """
         try:
             logger.info("Fetching Cognito public keys.")
             response = requests.get(self.COGNITO_PUBLIC_KEYS_URL)
@@ -39,15 +33,6 @@ class CognitoService:
             )
 
     def decode_and_verify_token(self, token: str) -> dict[str, Any]:
-        """
-        Decodes and verifies the JWT token using the public keys from Cognito.
-
-        Args:
-            token (str): The JWT token to decode and verify.
-
-        Returns:
-            Dict[str, Any]: The payload of the verified token.
-        """
         try:
             logger.info("Decoding and verifying token.")
             unverified_header = jwt.get_unverified_header(token)
@@ -96,18 +81,6 @@ class CognitoService:
             )
 
     async def extract_token(self, request: Request) -> User:
-        """
-        Extracts and validates JWT token from Authorization header to create a User object.
-        
-        Args:
-            request (Request): FastAPI request containing the Authorization header.
-        
-        Returns:
-            User: User object with data from token claims.
-            
-        Raises:
-            HTTPException: When Authorization header is missing or token lacks required claims.
-        """
         auth_header = request.headers.get("Authorization")
         if auth_header is None:
             logger.warning("Authorization header missing in the request.")

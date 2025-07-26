@@ -1,5 +1,4 @@
 import boto3
-from botocore.exceptions import BotoCoreError, ClientError
 
 class SSMService:
     def __init__(self, region_name: str = "us-east-1"):
@@ -12,5 +11,5 @@ class SSMService:
                 WithDecryption=with_decryption
             )
             return response["Parameter"]["Value"]
-        except (BotoCoreError, ClientError) as e:
-            raise RuntimeError(f"Failed to get parameter '{name}': {str(e)}") from e
+        except Exception as e:
+            raise RuntimeError(f"Error retrieving SSM parameter '{name}': {str(e)}") from e
