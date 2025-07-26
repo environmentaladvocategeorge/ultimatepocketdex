@@ -23,7 +23,6 @@ const styles = StyleSheet.create({
   },
   cardImageContainer: {
     width: "100%",
-    height: 120,
     borderRadius: 6,
     overflow: "hidden",
     backgroundColor: "#2a2a2a",
@@ -102,9 +101,10 @@ interface CardProps {
   card: CardType;
   quantity?: number;
   onAdd?: (cardId: string) => Promise<void>;
+  height?: number;
 }
 
-const Card = ({ card, onAdd, quantity }: CardProps) => {
+const Card = ({ card, onAdd, quantity, height = 120 }: CardProps) => {
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -146,7 +146,7 @@ const Card = ({ card, onAdd, quantity }: CardProps) => {
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-      <View style={styles.cardImageContainer}>
+      <View style={[styles.cardImageContainer, { height }]}>
         <ExpoImage
           source={card.card_image_url}
           style={styles.cardImage}

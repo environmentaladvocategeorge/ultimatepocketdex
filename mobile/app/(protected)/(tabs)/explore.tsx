@@ -25,7 +25,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import CardSetFilterOptionsBottomSheet from "@/components/CardSetFilterOptionsBottomSheet.tsx/CardSetFilterOptionsBottomSheet";
 import { Card as CardType, CardSet, Pokemon } from "@/types/api";
-import * as ImagePicker from "expo-image-picker";
 import { useDeviceCamera } from "@/hooks/useDeviceCamera";
 
 const styles = StyleSheet.create({
