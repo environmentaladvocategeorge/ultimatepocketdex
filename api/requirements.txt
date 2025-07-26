@@ -2,7 +2,7 @@ fastapi
 jwt
 mangum
 Pillow
-pinecone-client
+pinecone
 psycopg2-binary
 pydantic
 python-jose
