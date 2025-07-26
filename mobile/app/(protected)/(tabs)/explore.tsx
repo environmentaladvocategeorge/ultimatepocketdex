@@ -192,7 +192,7 @@ export default function ExploreScreen() {
 
   const onClickCamera = async () => {
     try {
-      const base64Image = await takeImage(); // Now returns base64 string
+      const base64Image = await takeImage();
       if (base64Image) {
         const token = await getToken();
 
