@@ -160,7 +160,11 @@ def create_search_controller():
             data = await request.json()
             base64_image = data.get("image")
             embeddings = sagemaker_service.get_image_embeddings(base64_image)
-            return JSONResponse(content={"embeddings": embeddings}, status_code=200)
+            if not embeddings:
+                return JSONResponse(status_code=400, content={"message": "No embeddings found in the image."})
+            matches = pinecone_service.query_index(embeddings)
+            ids = [match["id"] for match in matches.get("matches", [])]
+            return JSONResponse(content={"ids": ids}, status_code=200)
         except Exception as e:
             logger.error(f"Error in /search/image: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "An error occurred while processing your request."})

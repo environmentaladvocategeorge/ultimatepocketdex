@@ -31,3 +31,11 @@ class PineconeService:
 
     def get_index(self):
         return self.pc.Index(self.index_name)
+    
+    def query_index(self, embeddings: list[float], k: int = 10):
+        if not isinstance(embeddings, list) or not embeddings:
+            raise ValueError("Embeddings must be a non-empty list of floats.")
+        
+        index = self.get_index()
+        response = index.query(vector=embeddings, top_k=k, include_metadata=True)
+        return response

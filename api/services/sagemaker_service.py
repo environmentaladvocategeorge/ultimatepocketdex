@@ -48,11 +48,12 @@ class SageMakerService:
 
             try:
                 result = json.loads(raw_result.decode("utf-8"))
+                embeddings = result.get("embeddings")[0]
             except json.JSONDecodeError as json_err:
                 logger.error(f"Failed to parse SageMaker response as JSON: {json_err}")
                 raise RuntimeError("Invalid response from model.")
 
-            return result
+            return embeddings
         except Exception as e:
             logger.error(f"SageMaker inference error: {e}")
             raise RuntimeError("Error invoking SageMaker endpoint.")
