@@ -127,7 +127,6 @@ def create_search_controller():
                 query = query.order_by(desc(Card.card_name))
 
             total_count = count_query.scalar()
-            
             paginated_cards = query.offset(offset).limit(pageSize).all()
             cards_data = [card.to_dict() for card in paginated_cards]
 
@@ -154,7 +153,7 @@ def create_search_controller():
             logger.error(f"Unexpected error: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         finally:
-            if session: 
+            if session:
                 session.close()
                 
     @router.post("/search/image")
@@ -165,8 +164,7 @@ def create_search_controller():
 
             if not base64_image:
                 return JSONResponse(status_code=400, content={"message": "No image data provided."})
-            
-            # Remove any data URL prefix
+
             base64_str = re.sub(r"^data:image/\w+;base64,", "", base64_image)
 
             try:
@@ -181,19 +179,18 @@ def create_search_controller():
                 logger.error(f"Uploaded base64 is not a valid image: {img_err}")
                 return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
 
-            # Send raw image bytes to SageMaker with content type hardcoded to image/jpeg
             sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
-            OPENCLIP_ENDPOINT_NAME = os.environ.get("OPENCLIP_ENDPOINT_NAME")
+            SAGEMAKER_ENDPOINT = os.environ.get("SAGEMAKER_ENDPOINT")
 
             response = sagemaker_runtime.invoke_endpoint(
-                EndpointName=OPENCLIP_ENDPOINT_NAME,
+                EndpointName=SAGEMAKER_ENDPOINT,
                 ContentType="image/jpeg",
                 Body=image_bytes
             )
-            
+
             raw_result = response["Body"].read()
             logger.info(f"SageMaker raw response: {raw_result}")
-            
+
             try:
                 result = json.loads(raw_result.decode("utf-8"))
             except json.JSONDecodeError as json_err:

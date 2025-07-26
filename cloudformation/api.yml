@@ -15,9 +15,9 @@ Parameters:
   CognitoUserPoolClientId:
     Type: String
     Description: "The Client ID for the Cognito User Pool used for authentication."
-  OpenClipEndpointName:
+  SageMakerEndpointName:
     Type: String
-    Description: "Name of the OpenClip SageMaker Endpoint"
+    Description: "Name of the SageMaker Endpoint for OpenCLIP inference."
 
 Resources:
   ApiFunction:
@@ -32,7 +32,7 @@ Resources:
           ENV: !Ref Environment
           COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
           COGNITO_APP_CLIENT_ID: !Ref CognitoUserPoolClientId
-          OPENCLIP_ENDPOINT_NAME: !Ref OpenClipEndpointName
+          SAGEMAKER_ENDPOINT: !Ref SageMakerEndpointName
       Policies:
         - Version: "2012-10-17"
           Statement:

@@ -77,7 +77,7 @@ Resources:
       EndpointConfigName: !Sub "${ResourceBaseIdentifier}-openclip-config-${Environment}"
 
 Outputs:
-  OpenClipEndpointName:
+  SageMakerEndointName:
     Description: Name of the SageMaker Serverless Inference Endpoint
     Value: !GetAtt OpenClipEndpoint.EndpointName
     Export:
