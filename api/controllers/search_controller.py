@@ -156,17 +156,46 @@ def create_search_controller():
                 
     @router.post("/search/image")
     async def search_by_image(request: Request):
+        session = None
         try:
             data = await request.json()
             base64_image = data.get("image")
+
             embeddings = sagemaker_service.get_image_embeddings(base64_image)
             if not embeddings:
                 return JSONResponse(status_code=400, content={"message": "No embeddings found in the image."})
-            matches = pinecone_service.query_index(embeddings)
+
+            matches = pinecone_service.query_index(embeddings, k=10)
             ids = [match["id"] for match in matches.get("matches", [])]
-            return JSONResponse(content={"ids": ids}, status_code=200)
+
+            if not ids:
+                return JSONResponse(content={"cards": []}, status_code=200)
+            
+            session = db.get_session()
+
+            cards = (
+                session.query(Card)
+                .options(
+                    joinedload(Card.card_set).joinedload(CardSet.series),
+                    joinedload(Card.latest_price)
+                )
+                .join(CardSet, Card.card_set_id == CardSet.card_set_id)
+                .join(CardSeries, CardSet.series_id == CardSeries.series_id)
+                .outerjoin(latest_price_alias, Card.latest_price_id == latest_price_alias.price_id)
+                .filter(Card.card_id.in_(ids))
+                .all()
+            )
+
+            card_data = [card.to_dict() for card in cards]
+
+            return JSONResponse(content={"cards": card_data}, status_code=200)
+
         except Exception as e:
             logger.error(f"Error in /search/image: {str(e)}")
             return JSONResponse(status_code=500, content={"message": "An error occurred while processing your request."})
+        
+        finally:
+            if session:
+                session.close()
         
     return router
