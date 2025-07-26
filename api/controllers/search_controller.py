@@ -165,7 +165,7 @@ def create_search_controller():
             if not embeddings:
                 return JSONResponse(status_code=400, content={"message": "No embeddings found in the image."})
 
-            matches = pinecone_service.query_index(embeddings, k=10)
+            matches = pinecone_service.query_index(embeddings, k=5)
             ids = [match["id"] for match in matches.get("matches", [])]
 
             if not ids:
@@ -186,7 +186,9 @@ def create_search_controller():
                 .all()
             )
 
-            card_data = [card.to_dict() for card in cards]
+            card_map = {card.card_id: card for card in cards}
+            sorted_cards = [card_map[i] for i in ids if i in card_map]
+            card_data = [card.to_dict() for card in sorted_cards]
 
             return JSONResponse(content={"cards": card_data}, status_code=200)
 
@@ -197,5 +199,5 @@ def create_search_controller():
         finally:
             if session:
                 session.close()
-        
+            
     return router

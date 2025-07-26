@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  Dimensions,
 } from "react-native";
 import {
   Text,
@@ -60,6 +62,8 @@ const styles = StyleSheet.create({
   },
 });
 
+const screenHeight = Dimensions.get("window").height;
+
 export default function ExploreScreen() {
   const { getToken } = useAuthentication();
   const { takeImage, isLoading, error } = useDeviceCamera();
@@ -71,6 +75,9 @@ export default function ExploreScreen() {
   const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
   const [pokemonFilter, setPokemonFilter] = useState<Pokemon | null>(null);
   const [cardSetFilter, setCardSetFilter] = useState<CardSet | null>(null);
+  const [imageAnalysisVisible, setImageAnalysisVisible] = useState(false);
+  const [analyzedCards, setAnalyzedCards] = useState<CardType[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
   const [q, setQ] = useState<string>("");
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const pokemonFilterSheetRef = useRef<BottomSheetModal>(null);
@@ -194,6 +201,9 @@ export default function ExploreScreen() {
     try {
       const base64Image = await takeImage();
       if (base64Image) {
+        setImageAnalysisVisible(true);
+        setAnalyzing(true);
+
         const token = await getToken();
 
         const response = await fetch(
@@ -215,10 +225,12 @@ export default function ExploreScreen() {
         }
 
         const data = await response.json();
-        console.log("Image upload successful:", data);
+        setAnalyzedCards(data.cards || []);
       }
     } catch (error) {
       console.error("Image upload failed:", error);
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -233,6 +245,81 @@ export default function ExploreScreen() {
           setSortOption(option);
         }}
       />
+      <Modal
+        visible={imageAnalysisVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageAnalysisVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.8)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 16,
+          }}
+        >
+          {analyzing ? (
+            <View
+              style={{
+                backgroundColor: colors.black,
+                padding: 20,
+                borderRadius: 12,
+                alignItems: "center",
+                width: "90%",
+              }}
+            >
+              <ActivityIndicator size="large" color="#4d7cc9" />
+              <Text style={{ color: "white", marginTop: 10, fontSize: 16 }}>
+                Analyzing image...
+              </Text>
+            </View>
+          ) : (
+            <View
+              style={{
+                height: screenHeight * 0.9,
+                width: "100%",
+                backgroundColor: colors.black,
+                borderRadius: 12,
+                padding: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
+                  style={{ color: "white", fontSize: 16, fontWeight: "700" }}
+                >
+                  Matches Found:
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setImageAnalysisVisible(false)}
+                >
+                  <Ionicons name="close" size={22} color="white" />
+                </TouchableOpacity>
+              </View>
+
+              <FlashList
+                data={analyzedCards}
+                renderItem={({ item }) => (
+                  <Card card={item} onAdd={addCardToUser} />
+                )}
+                keyExtractor={(item, index) => `${item.card_id}-${index}`}
+                estimatedItemSize={250}
+                numColumns={2}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
+          )}
+        </View>
+      </Modal>
+
       <PokemonFilterOptionsBottomSheet
         ref={pokemonFilterSheetRef}
         selectedPokemon={pokemonFilter}
