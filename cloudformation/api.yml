@@ -40,7 +40,10 @@ Resources:
               Action:
                 - rds:*
                 - sagemaker:InvokeEndpoint
+                - ssm:GetParameter
+                - ssm:GetParameters
               Resource: "*"
+
       Events:
         GetUser:
           Type: Api

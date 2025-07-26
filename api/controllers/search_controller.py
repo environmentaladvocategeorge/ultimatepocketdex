@@ -7,6 +7,7 @@ from sqlalchemy.sql import or_
 from alchemy_models.card_price_history import CardPriceHistory
 from alchemy_models.card_series import CardSeries
 from services.sagemaker_service import SageMakerService
+from services.pinecone_service import PineconeService
 from repository.postgresql_database import PostgresDatabase
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
@@ -25,6 +26,11 @@ db = PostgresDatabase(
 )
 
 sagemaker_service = SageMakerService()
+pinecone_service = PineconeService(
+    index_name="upd-card-embeddings",
+    api_key_path="upd/dev/pinecone-api-key"
+)
+pinecone_service.verify() 
 
 latest_price_alias = aliased(CardPriceHistory)
 
