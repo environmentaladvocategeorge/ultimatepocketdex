@@ -5,7 +5,8 @@ from PIL import Image
 import torch
 from transformers import CLIPModel, CLIPProcessor
 
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device).float()
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 
@@ -25,13 +26,14 @@ def input_fn(request_body, content_type):
     else:
         raise ValueError(f"Unsupported content type: {content_type}")
 
-    inputs = processor(images=image, return_tensors="pt")
+    inputs = processor(images=image, return_tensors="pt").to(device)
     return inputs
 
 
 def predict_fn(inputs, model):
     with torch.no_grad():
         embeddings = model.get_image_features(**inputs)
+        embeddings = embeddings / embeddings.norm(p=2, dim=-1, keepdim=True)
     return embeddings.cpu().numpy().tolist()
 
 

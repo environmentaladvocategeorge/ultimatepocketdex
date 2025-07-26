@@ -186,7 +186,8 @@ def create_search_controller():
                 .all()
             )
 
-            card_data = [card.to_dict() for card in cards]
+            cards_sorted = sorted(cards, key=lambda card: ids.index(str(card.card_id)))
+            card_data = [card.to_dict() for card in cards_sorted]
 
             return JSONResponse(content={"cards": card_data}, status_code=200)
 
