@@ -1,25 +1,18 @@
-import base64
-import json
-import os
-import re
 from typing import Optional
-import boto3
-from fastapi import APIRouter, Query, Request, HTTPException
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import desc, asc, func
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import or_
-from sqlalchemy.exc import SQLAlchemyError
 from alchemy_models.card_price_history import CardPriceHistory
 from alchemy_models.card_series import CardSeries
+from services.sagemaker_service import SageMakerService
 from repository.postgresql_database import PostgresDatabase
 from alchemy_models.card import Card
 from alchemy_models.card_set import CardSet
 from utils.logger import get_logger
 from pydantic import BaseModel
 from enum import Enum
-from PIL import Image
-import io
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -30,6 +23,8 @@ db = PostgresDatabase(
     user="jorgelovesdata",
     password="Apple123Watch"
 )
+
+sagemaker_service = SageMakerService()
 
 latest_price_alias = aliased(CardPriceHistory)
 
@@ -146,12 +141,9 @@ def create_search_controller():
                 },
             })
 
-        except SQLAlchemyError as e:
-            logger.error(f"Database error: {str(e)}")
-            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
-            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+            logger.error(f"Error in /search: {str(e)}")
+            return JSONResponse(status_code=500, content={"message": "An error occurred while processing your request."})
         finally:
             if session:
                 session.close()
@@ -161,49 +153,10 @@ def create_search_controller():
         try:
             data = await request.json()
             base64_image = data.get("image")
-
-            if not base64_image:
-                return JSONResponse(status_code=400, content={"message": "No image data provided."})
-
-            base64_str = re.sub(r"^data:image/\w+;base64,", "", base64_image)
-
-            try:
-                image_bytes = base64.b64decode(base64_str)
-            except Exception as decode_err:
-                logger.error(f"Failed to decode base64 image: {decode_err}")
-                return JSONResponse(status_code=400, content={"message": "Invalid base64 image data."})
-            
-            try:
-                Image.open(io.BytesIO(image_bytes)).verify()
-            except Exception as img_err:
-                logger.error(f"Uploaded base64 is not a valid image: {img_err}")
-                return JSONResponse(status_code=400, content={"message": "Uploaded data is not a valid image."})
-
-            sagemaker_runtime = boto3.client("sagemaker-runtime", region_name="us-east-1")
-            SAGEMAKER_ENDPOINT = os.environ.get("SAGEMAKER_ENDPOINT")
-
-            response = sagemaker_runtime.invoke_endpoint(
-                EndpointName=SAGEMAKER_ENDPOINT,
-                ContentType="image/jpeg",
-                Body=image_bytes
-            )
-
-            raw_result = response["Body"].read()
-            logger.info(f"SageMaker raw response: {raw_result}")
-
-            try:
-                result = json.loads(raw_result.decode("utf-8"))
-            except json.JSONDecodeError as json_err:
-                logger.error(f"Failed to parse SageMaker response as JSON: {json_err}")
-                return JSONResponse(status_code=500, content={"message": "Invalid response from model"})
-
-            return JSONResponse(content={"embeddings": result}, status_code=200)
-
-        except HTTPException as he:
-            logger.error(f"HTTP error: {he.detail}")
-            raise
+            embeddings = sagemaker_service.get_image_embeddings(base64_image)
+            return JSONResponse(content={"embeddings": embeddings}, status_code=200)
         except Exception as e:
-            logger.error(f"Unexpected error in /search/image: {str(e)}")
-            return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
-            
+            logger.error(f"Error in /search/image: {str(e)}")
+            return JSONResponse(status_code=500, content={"message": "An error occurred while processing your request."})
+        
     return router
