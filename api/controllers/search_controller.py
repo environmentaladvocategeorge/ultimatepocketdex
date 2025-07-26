@@ -28,7 +28,7 @@ db = PostgresDatabase(
 sagemaker_service = SageMakerService()
 pinecone_service = PineconeService(
     index_name="upd-card-embeddings",
-    api_key_path="upd/dev/pinecone-api-key"
+    api_key_path="/upd/dev/pinecone-api-key"
 )
 pinecone_service.verify() 
 
